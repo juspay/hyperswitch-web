@@ -83,8 +83,8 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
   )
 
   let validateIdentifier = (value, identityType: identityType) => {
-    let emailRegex = %re("/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/")
-    let phoneRegex = %re("/^\d{6,14}$/")
+    let emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    let phoneRegex = /^\d{6,14}$/
 
     switch identityType {
     | EMAIL_ADDRESS => emailRegex->RegExp.test(value)
@@ -97,9 +97,9 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
       if String.includes(value, " ") {
         value
       } else {
-        String.replaceRegExp(value, %re("/^\+(\d{1,3})(\d+)$/"), "+$1 $2")
+        String.replaceRegExp(value, /^\+(\d{1,3})(\d+)$/, "+$1 $2")
       }
-    } else if String.match(value, %re("/^\d+$/"))->Option.isSome {
+    } else if String.match(value, /^\d+$/)->Option.isSome {
       `+${value}`
     } else {
       value
@@ -118,7 +118,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
     let target = ev->ReactEvent.Form.target
     let newValue = target["value"]
     setIdentifierType(_ => newValue)
-    setIdentifier(_ => "") // Clear the input when changing type
+    setIdentifier(_ => "")
   }
 
   let handleCountryCodeChange = ev => {
@@ -129,7 +129,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
 
   let handlePhoneInputChange = ev => {
     let target = ev->ReactEvent.Form.target
-    let newValue = target["value"]->String.replaceRegExp(%re("/\\D/g"), "") // Remove non-digit characters
+    let newValue = target["value"]->String.replaceRegExp(/\D/g, "") // Remove non-digit characters
     setIdentifier(_ => newValue)
   }
 

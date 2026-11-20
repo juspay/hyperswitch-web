@@ -1,6 +1,6 @@
 open Utils
 @react.component
-let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
+let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
   open JotaiAtoms
   open JotaiAtomsV2
 
@@ -34,7 +34,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setCardCvcPlaceholder = Jotai.useSetAtom(cardCvcPlaceholder)
   let setCardholderNamePlaceholder = Jotai.useSetAtom(cardholderNamePlaceholder)
   let (divH, setDivH) = React.useState(_ => 0.0)
-  let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
   let setPaymentMethodCollectOptions = Jotai.useSetAtom(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
@@ -171,7 +170,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | CardExpiryElement
     | CardCVCElement
     | Card =>
-      setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+      setOptions(_ => ElementType.itemToObjMapper(optionsDict))
     | PaymentMethodCollectElement => {
         let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
@@ -186,7 +185,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PaymentMethodsManagement
     | PaymentMethodsSDK
     | Payment => {
-        let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
+        let paymentOptions = PaymentType.itemToObjMapper(optionsDict)
         setOptionsPayment(prev => {...paymentOptions, subscriptionEvents: prev.subscriptionEvents})
         optionsCallback(paymentOptions)
       }
@@ -199,22 +198,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       let paymentOptions = dict->getDictFromObj("paymentOptions")
       let optionsDict = dict->getDictFromObj("options")
       let (default, defaultRules) = (themeValues.default, themeValues.defaultRules)
-      let config = CardTheme.itemToObjMapper(paymentOptions, default, defaultRules, logger)
-      let optionsLocaleString = getWarningString(optionsDict, "locale", "", ~logger)
-      let optionsAppearance = CardTheme.getAppearance(
-        "appearance",
-        optionsDict,
-        default,
-        defaultRules,
-        logger,
-      )
+      let config = CardTheme.itemToObjMapper(paymentOptions, default, defaultRules)
+      let optionsLocaleString = getWarningString(optionsDict, "locale", "")
+      let optionsAppearance = CardTheme.getAppearance("appearance", optionsDict, default, defaultRules)
       let appearance =
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
       let requestedLocale = optionsLocaleString == "" ? config.locale : optionsLocaleString
       let resolvedLocale = requestedLocale === "auto" ? Window.Navigator.language : requestedLocale
       let localeString = await CardTheme.getLocaleObject(requestedLocale)
       let constantString = await CardTheme.getConstantStringsObject()
-      let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale, ~logger)
+      let _ = await S3Utils.initializeCountryData(~locale=resolvedLocale)
       setConfig(_ => {
         config: {
           appearance,
@@ -244,31 +237,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       ("applePayMounted", true->JSON.Encode.bool),
       ("componentName", componentName->JSON.Encode.string),
     ])
-    logger.setLogInitiated()
     let updatedState: PaymentType.loadType = switch paymentMethodList {
     | Loading => checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
-    let finalLoadLatency = if launchTime <= 0.0 {
-      0.0
-    } else {
-      Date.now() -. launchTime
-    }
     switch updatedState {
-    | Loaded(_) =>
-      logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
-    | Loading =>
-      logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
-    | SemiLoaded => {
-        setPaymentMethodList(_ => updatedState)
-        logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
-      }
-    | LoadError(x) =>
-      logger.setLogError(
-        ~value="LoadError: " ++ x->JSON.stringify,
-        ~eventName=LOADER_CHANGED,
-        ~latency=finalLoadLatency,
-      )
+    | SemiLoaded => setPaymentMethodList(_ => updatedState)
+    | _ => ()
     }
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
@@ -319,6 +294,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         // Card-form ports are never taken from the host page: script there could read
         // every keystroke through them. See CardFormPortHandshake.
         if dict->getDictIsSome("paymentElementCreate") {
+          // Trust the sender's origin, not the parentURL supplied in its payload.
           // Pin the browser-provided origin of the direct host, never a payload's wildcard.
           parentOriginRef.current = Some(ev.origin)
           dict->Dict.set("parentURL", ev.origin->JSON.Encode.string)
@@ -343,13 +319,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               updateOptions(dict)
             } else {
               let sdkSessionId = dict->getString("sdkSessionId", "no-element")
-              logger.setSessionId(sdkSessionId)
-              if dict->Dict.get("loggerSource")->Option.isSome {
-                logger.setSource(dict->getString("loggerSource", "hyper_payment"))
-              }
-              if dict->Dict.get("loggerPaymentId")->Option.isSome {
-                logger.setPaymentId(dict->getString("loggerPaymentId", ""))
-              }
               if GlobalVars.isInteg {
                 setBlockConfirm(_ => dict->getBool("blockConfirm", false))
               }
@@ -357,15 +326,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               setSessionId(_ => {
                 sdkSessionId
               })
-              if dict->getDictIsSome("publishableKey") {
-                let publishableKey = dict->getString("publishableKey", "")
-                logger.setMerchantId(publishableKey)
-              }
-              if dict->getDictIsSome("analyticsMetadata") {
-                let metadata = dict->getJsonObjectFromDict("analyticsMetadata")
-                logger.setMetadata(metadata)
-              }
-
               if dict->getDictIsSome("isPaymentCompleteHandlerProvided") {
                 let isCallbackUsedVal =
                   dict->Utils.getBool("isPaymentCompleteHandlerProvided", false)
@@ -379,8 +339,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
                 setPaymentOptionsJson(_ => paymentOptions->JSON.Encode.object)
 
-                let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-                let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
+                let clientSecret = getWarningString(paymentOptions, "clientSecret", "")
+                let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "")
                 let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
                 setKeys(prev => {
                   ...prev,
@@ -388,22 +348,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   sdkAuthorization: Some(sdkAuthorization),
                   pmSessionId,
                 })
-                logger.setClientSecret(clientSecret)
-                logger.setSdkAuthorization(sdkAuthorization)
 
                 // Update top redirection atom
                 updateRedirectionFlags(paymentOptions)
 
                 paymentOptions->loadTheme(res => dict->setConfigs(res))
               }
-              let newLaunchTime = dict->getFloat("launchTime", 0.0)
-              setLaunchTime(_ => newLaunchTime)
-              let initLoadlatency = Date.now() -. newLaunchTime
-              logger.setLogInfo(
-                ~value=Window.hrefWithoutSearch,
-                ~eventName=APP_RENDERED,
-                ~latency=initLoadlatency,
-              )
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
@@ -412,20 +362,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               ]->Array.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)
               })
-              let renderLatency = Date.now() -. initTimestamp
-              logger.setLogInfo(
-                ~eventName=PAYMENT_OPTIONS_PROVIDED,
-                ~latency=renderLatency,
-                ~value="",
-              )
               updateOptions(dict)
             }
           } else if dict->getDictIsSome("paymentOptions") {
             let paymentOptions = dict->getDictFromObj("paymentOptions")
             setPaymentOptionsJson(_ => paymentOptions->JSON.Encode.object)
 
-            let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-            let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
+            let clientSecret = getWarningString(paymentOptions, "clientSecret", "")
+            let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "")
             let sdkAuthorization = getString(paymentOptions, "sdkAuthorization", "")
             setKeys(prev => {
               ...prev,
@@ -433,8 +377,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               sdkAuthorization: Some(sdkAuthorization),
               pmSessionId,
             })
-            logger.setClientSecret(clientSecret)
-            logger.setSdkAuthorization(sdkAuthorization)
 
             // Update top redirection atom
             updateRedirectionFlags(paymentOptions)
@@ -447,7 +389,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         } else if dict->getDictIsSome("paymentElementsUpdate") {
           updateOptions(dict)
         } else if dict->getDictIsSome("ElementsUpdate") {
-          logger.setLogInfo(~value="SDK Credentials Received from Loader", ~eventName=UPDATE_SDK)
           let optionsDict = dict->getDictFromObj("options")
           setPaymentOptionsJson(prev => {
             let updatedPaymentOptions = prev->getDictFromJson->Dict.copy
@@ -595,11 +536,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               },
             })
           }
-          let finalLoadLatency = if launchTime <= 0.0 {
-            0.0
-          } else {
-            Date.now() -. launchTime
-          }
           let isClientListError =
             clientListJson == Dict.make()->JSON.Encode.object ||
               listDict->Dict.get("error")->Option.isSome
@@ -611,23 +547,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   listDict->getArray("payment_methods_enabled")->Array.length > 0
                 isNonEmptyPaymentMethodList ? Loaded(clientListJson) : LoadError(clientListJson)
               }
-
-          let evalMethodsList = () =>
-            switch updatedState {
-            | Loaded(_) =>
-              logger.setLogInfo(
-                ~value="Loaded",
-                ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadLatency,
-              )
-            | LoadError(x) =>
-              logger.setLogError(
-                ~value="LoadError: " ++ x->JSON.stringify,
-                ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadLatency,
-              )
-            | _ => ()
-            }
 
           setPaymentMethodList(_ => updatedState)
 
@@ -645,27 +564,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             customerPaymentMethods,
           })
 
-          // Payment-methods-list and customer-payment-methods data both
-          // arrive together in a single clientList response, so this is
-          // evaluated once using the freshly-computed customerPaymentMethods
-          // above. Logging it once per data source (as when they arrived as
-          // two independent postMessages) would double-log this event.
-          if !optionsPayment.displaySavedPaymentMethods {
-            evalMethodsList()
-          } else {
-            switch customerPaymentMethods {
-            | LoadingSavedCards => ()
-            | LoadedSavedCards(list, _) =>
-              list->Array.length > 0
-                ? logger.setLogInfo(
-                    ~value="Loaded",
-                    ~eventName=LOADER_CHANGED,
-                    ~latency=finalLoadLatency,
-                  )
-                : evalMethodsList()
-            | NoResult(_) => evalMethodsList()
-            }
-          }
         }
         if dict->getDictIsSome("paymentManagementMethods") {
           let paymentManagementMethods =
@@ -682,26 +580,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let updatedState: PaymentType.loadType = isSdkConfigsError
             ? LoadError(sdkConfigsJson)
             : Loaded(sdkConfigsJson)
-          let finalLoadLatency = if launchTime <= 0.0 {
-            0.0
-          } else {
-            Date.now() -. launchTime
-          }
-          switch updatedState {
-          | Loaded(_) =>
-            logger.setLogInfo(
-              ~value="Loaded",
-              ~eventName=SDK_CONFIGS_CALL,
-              ~latency=finalLoadLatency,
-            )
-          | LoadError(x) =>
-            logger.setLogError(
-              ~value="LoadError: " ++ x->JSON.stringify,
-              ~eventName=SDK_CONFIGS_CALL,
-              ~latency=finalLoadLatency,
-            )
-          | _ => ()
-          }
           setSdkConfigs(_ => updatedState)
           if !isSdkConfigsError {
             setSdkConfigsValue(_ => sdkConfigsJson->SdkConfigParser.itemToObjMapper)
@@ -717,11 +595,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let isLoading = dict->getBool("updateIntentLoading", false)
           setIsUpdateIntentLoading(_ => isLoading)
           isAwaitingUpdatedListRef.current = isLoading
-          if isLoading {
-            logger.setLogInfo(~value="Update Intent Loading Started", ~eventName=UPDATE_INTENT)
-          } else {
-            logger.setLogInfo(~value="Update Intent Loading Completed", ~eventName=UPDATE_INTENT)
-          }
         }
       } catch {
       | _ => setIntegrateErrorError(_ => true)

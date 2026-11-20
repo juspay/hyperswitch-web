@@ -11,14 +11,13 @@ let make = (~sessionObj: SessionsType.token) => {
   let paymentMethodType = "klarna"
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let loggerState = Jotai.useAtomValue(loggerAtom)
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let updateSession = Jotai.useAtomValue(updateSession)
   let {publishableKey, iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
   let options = Jotai.useAtomValue(optionAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Some(loggerState), Other)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Other)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
@@ -49,15 +48,9 @@ let make = (~sessionObj: SessionsType.token) => {
     ~paymentMethodType,
   )
 
-  let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
-  )
-
-  DynamicFieldsUtils.useLogDynamicFieldsRendered(
-    ~fields=requiredFields,
-    ~paymentMethod,
-    ~resolutionContext,
   )
 
   UtilityHooks.useHandlePostMessages(
@@ -84,18 +77,8 @@ let make = (~sessionObj: SessionsType.token) => {
           on_click: authorize => {
             if isTestMode {
               Console.warn("Klarna SDK button clicked in test mode - interaction disabled")
-              loggerState.setLogInfo(
-                ~value="Klarna SDK button clicked in test mode - interaction disabled",
-                ~eventName=KLARNA_SDK_FLOW,
-                ~paymentMethod="KLARNA",
-              )
               resolve()
             } else {
-              loggerState.setLogInfo(
-                ~value="Klarna SDK Button Clicked",
-                ~eventName=KLARNA_SDK_FLOW,
-                ~paymentMethod="KLARNA",
-              )
               PaymentUtils.emitPaymentMethodInfo(
                 ~paymentMethod="wallet",
                 ~paymentMethodType,

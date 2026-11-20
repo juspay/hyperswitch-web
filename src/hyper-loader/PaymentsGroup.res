@@ -11,7 +11,6 @@ type groupConfig = {
   customBackendUrl: option<string>,
   appearance: option<JSON.t>,
   locale: option<string>,
-  logger: HyperLoggerTypes.loggerMake,
 }
 
 let reshapeCardStateUpdateToChangePayload = CardFormShared.reshapeCardStateUpdateToChangePayload
@@ -69,8 +68,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let customBackendUrl = config.customBackendUrl->Option.getOr("")
   let appearance = config.appearance->Option.getOr(Dict.make()->JSON.Encode.object)
   let locale = config.locale->Option.getOr("en")
-  let logger = config.logger
-  logger.setLogInfo(~value="Card form created", ~eventName=CARD_FORM_FLOW)
 
   let fieldsRef: ref<Dict.t<fieldEntry>> = ref(Dict.make())
   let fields: ref<JSON.t> = ref(Dict.make()->JSON.Encode.object)
@@ -105,7 +102,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
   let clientListDataPromise = PaymentHelpers.fetchClientList(
     ~clientSecret,
     ~publishableKey,
-    ~logger,
     ~customPodUri="",
     ~endpoint,
     ~sdkAuthorization=Some(sdkAuthorization)->getNonEmptyOption,
@@ -164,7 +160,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                     ("parentURL", "*"->JSON.Encode.string),
                     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
                     ("launchTime", Date.now()->JSON.Encode.float),
-                    ("loggerSource", "hyper_payments_coordinator"->JSON.Encode.string),
                   ]->Dict.fromArray
                 mount.iframe
                 ->Nullable.make
@@ -191,7 +186,10 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               Promise.resolve()
             })
             ->Promise.catch(err => {
-              Console.error2("[PaymentsGroup] clientList fetch rejected — coordinator continues without pre-warmed list", err)
+              Console.error2(
+                "[PaymentsGroup] clientList fetch rejected — coordinator continues without pre-warmed list",
+                err,
+              )
               Promise.resolve()
             })
             ->ignore
@@ -224,8 +222,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       },
       coordinatorListenerName,
     )
-    deinitCallbacksRef.contents->Array.push(
-      () => EventListenerManager.removeSmartEventListener("message", coordinatorListenerName),
+    deinitCallbacksRef.contents->Array.push(() =>
+      EventListenerManager.removeSmartEventListener("message", coordinatorListenerName)
     )
   }
 
@@ -303,7 +301,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         ("clientSecret", clientSecret->JSON.Encode.string),
       ],
       ~sdkSessionId="",
-      ~loggerSource="hyper_payments_v2",
       ~savedCardBrand,
       ~tailKeys=[("locale", locale->JSON.Encode.string)],
     )
@@ -330,14 +327,14 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       )
       clientListDataPromise
       ->Promise.then(json => {
-        mountedIframeRef->Window.iframePostMessage(
-          [("clientList", json)]->Dict.fromArray,
-          ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
-        )
+        mountedIframeRef->Window.iframePostMessage([("clientList", json)]->Dict.fromArray, ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin)
         Promise.resolve()
       })
       ->Promise.catch(err => {
-        Console.error2("[PaymentsGroup] clientList fetch rejected — field continues without pre-warmed list", err)
+        Console.error2(
+          "[PaymentsGroup] clientList fetch rejected — field continues without pre-warmed list",
+          err,
+        )
         Promise.resolve()
       })
       ->ignore
@@ -386,10 +383,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
               switch cardStateUpdate {
               | Some(stateJson) =>
                 lastStateRef := Some(stateJson)
-                let changePayload = reshapeCardStateUpdateToChangePayload(
-                  ~fieldType,
-                  ~stateJson,
-                )
+                let changePayload = reshapeCardStateUpdateToChangePayload(~fieldType, ~stateJson)
                 eventHandlersRef.contents
                 ->Dict.get("change")
                 ->Option.forEach(cb => cb(changePayload))
@@ -430,23 +424,17 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       ~listenerName,
       ~eventHandlersRef,
       ~update=newOptions => {
-        let savedCardToken =
-          postFieldUpdate(
-            ~iframeRef,
-            ~newOptions,
-            ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin,
-          )->getString("paymentToken", "")
+        let savedCardToken = postFieldUpdate(~iframeRef, ~newOptions, ~targetOrigin=URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin)->getString("paymentToken", "")
         if savedCardToken !== "" {
           savedCardTokenRef := savedCardToken
         }
       },
-      ~logger,
     )
 
     attachFieldListener()
 
-    deinitCallbacksRef.contents->Array.push(
-      () => EventListenerManager.removeSmartEventListener("message", `onPaymentsV2Field-${fieldId}`),
+    deinitCallbacksRef.contents->Array.push(() =>
+      EventListenerManager.removeSmartEventListener("message", `onPaymentsV2Field-${fieldId}`)
     )
 
     {
@@ -482,20 +470,26 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         if isDoSubmit && isFromOurFrames(ev) && !confirmingRef.contents {
           switch findFieldOfType("cardNumber") {
           | Some(_entry) =>
-            postCoordinatorCommand(coordinator, [
-              ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
-              ("flow", "payments"->JSON.Encode.string),
-            ])
+            postCoordinatorCommand(
+              coordinator,
+              [
+                ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
+                ("flow", "payments"->JSON.Encode.string),
+              ],
+            )
           | None if findFieldOfType("cardholderName")->Option.isSome => ()
           | None =>
             findFieldOfType("cardCvc")->Option.forEach(entry => {
               let paymentToken = entry.savedCardTokenRef.contents
               if paymentToken !== "" {
-                postCoordinatorCommand(coordinator, [
-                  ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
-                  ("flow", "savedCardCvc"->JSON.Encode.string),
-                  ("paymentToken", paymentToken->JSON.Encode.string),
-                ])
+                postCoordinatorCommand(
+                  coordinator,
+                  [
+                    ("cardFormCoordinatorCommand", "initiateConfirm"->JSON.Encode.string),
+                    ("flow", "savedCardCvc"->JSON.Encode.string),
+                    ("paymentToken", paymentToken->JSON.Encode.string),
+                  ],
+                )
               }
             })
           }
@@ -505,7 +499,9 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     )
   }
   attachSubmitRelay()
-  deinitCallbacksRef.contents->Array.push(() => EventListenerManager.removeSmartEventListener("message", doSubmitListenerName))
+  deinitCallbacksRef.contents->Array.push(() =>
+    EventListenerManager.removeSmartEventListener("message", doSubmitListenerName)
+  )
 
   let create = (fieldType: string, options: JSON.t): fieldHandle => {
     switch mapFieldTypeToInternalFieldName(fieldType) {
@@ -514,7 +510,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         Types.defaultFieldHandle
       }
     | _ =>
-      logger.setLogInfo(~value=`${fieldType} created`, ~eventName=CARD_FORM_FLOW)
       let subscriptionEventsChanged = mergeSubscriptionEvents(
         ~subscriptionEventsRef,
         ~fieldOptions=options,
@@ -530,7 +525,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
       let entry = createFieldHandle(fieldType, options, fieldId)
       fieldsRef.contents->Dict.set(fieldId, entry)
       registerField(~fields, ~fieldId, ~fieldType)
-
       entry.handle
     }
   }
@@ -559,21 +553,8 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     }
   }
 
-  let on = (event: string, cb: JSON.t => unit): unit => {
+  let on = (event: string, cb: JSON.t => unit): unit =>
     eventCallbacksRef.contents->Dict.set(event, cb)
-  }
-
-  // Only the outcome and its error code are logged — never the card values or the payment token.
-  let logConfirmOutcome = (result: JSON.t) =>
-    switch result->getDictFromJson->getDictFromDict("error")->Dict.get("code") {
-    | Some(code) =>
-      logger.setLogInfo(
-        ~value=`confirmPayment failed: ${code->JSON.Decode.string->Option.getOr("")}`,
-        ~eventName=CARD_FORM_FLOW,
-        ~logType=ERROR,
-      )
-    | None => logger.setLogInfo(~value="confirmPayment succeeded", ~eventName=CARD_FORM_FLOW)
-    }
 
   let dispatchConfirm = (~flow: string, ~paymentToken: option<string>): promise<JSON.t> =>
     Promise.make((resolve, _reject) => {
@@ -604,8 +585,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     })
 
   let confirmPayment = (): promise<JSON.t> => {
-    logger.setLogInfo(~value="confirmPayment initiated", ~eventName=CARD_FORM_FLOW)
-    let outcome = if confirmingRef.contents {
+    if confirmingRef.contents {
       Promise.resolve(
         groupFailureResponse(
           ~code="confirm_in_progress",
@@ -647,19 +627,15 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
         )
       }
     }
-    outcome->Promise.thenResolve(result => {
-      logConfirmOutcome(result)
-      result
-    })
   }
 
-
   let deinit = (): unit => {
-    logger.setLogInfo(~value="Card form deinitialized", ~eventName=CARD_FORM_FLOW)
     fieldsRef.contents
     ->Dict.valuesToArray
     ->Array.forEach(entry => {
-      try entry.handle.destroy() catch { | _ => () }
+      try entry.handle.destroy() catch {
+      | _ => ()
+      }
     })
     fieldsRef := Dict.make()
     fields := Dict.make()->JSON.Encode.object
