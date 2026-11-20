@@ -186,6 +186,7 @@ let make = (
         <SavedCardItem
           key={i->Int.toString}
           setPaymentToken
+          logListSource="saved_methods"
           isActive
           paymentItem=obj
           brandIcon={obj->getPaymentMethodBrand}

@@ -1,12 +1,12 @@
 import { test, expect } from "../../fixtures/sdk-runtime";
 
-test.describe.skip("Element listener logging @hermetic-only", () => {
+test.describe("Element listener logging @hermetic-only", () => {
   for (const handshakeFirst of [false, true]) {
     test(`a handler created after mounting shares the element's listener log (handshake first: ${handshakeFirst})`, async ({
       runtimePage,
     }) => {
       const result = await runtimePage.evaluate(async (handshakeFirst) => {
-        const { elements, logs } = window.sdkTest.makeElements();
+        const { elements } = window.sdkTest.makeElements();
         const mounting = elements.create("cardCvc", {});
         mounting.mount("#first");
         if (handshakeFirst) window.sdkTest.notifyMounted("first");
@@ -20,7 +20,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
         await Promise.resolve();
         if (!handshakeFirst) window.sdkTest.notifyMounted("first");
         registration.on("focus", () => {});
-        return { changes, logs };
+        return { changes, logs: window.sdkTest.listenerLogs() };
       }, handshakeFirst);
       expect(result.changes).toBe(1);
       expect(result.logs).toEqual([
@@ -37,7 +37,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(async () => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const emptyRegistration = elements.create("cardCvc", {});
       const registration = elements.create("cardCvc", {});
       const emptyMount = elements.create("cardCvc", {});
@@ -53,7 +53,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       window.sdkTest.notifyMounted("second");
       emptyMount.destroy();
       registration.on("focus", () => {});
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: [] },
@@ -66,7 +66,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(async () => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const firstRegistration = elements.create("cardCvc", {});
       const secondRegistration = elements.create("cardCvc", {});
       elements.create("cardCvc", {}).mount("#first");
@@ -78,7 +78,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       window.sdkTest.notifyMounted("first");
       window.sdkTest.notifyMounted("second");
       firstRegistration.on("blur", () => {});
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: ["ready", "change"] },
@@ -91,7 +91,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(async () => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const element = elements.create("cardCvc", {});
       element.on("change", () => {});
       element.mount("#first");
@@ -102,7 +102,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
         iframe.addEventListener("load", () => resolve(), { once: true }),
       );
       window.sdkTest.notifyMounted("first");
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: ["change"] },
@@ -113,7 +113,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(() => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const surviving = elements.create("cardCvc", {});
       const discarded = elements.create("cardCvc", {});
       surviving.on("change", () => {});
@@ -122,7 +122,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       surviving.on("focus", () => {});
       surviving.mount("#second");
       window.sdkTest.notifyMounted("second");
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: ["change", "focus"] },
@@ -133,7 +133,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(async () => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const oldRegistration = elements.create("cardCvc", {});
       const oldMount = elements.create("cardCvc", {});
       oldMount.mount("#first");
@@ -145,7 +145,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       await Promise.resolve();
       window.sdkTest.notifyMounted("first");
       registration.on("focus", () => {});
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: ["change"] },
@@ -157,7 +157,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(() => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const old = elements.create("cardCvc", {});
       old.on("ready", () => {});
       old.mount("#first");
@@ -166,7 +166,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       replacement.on("change", () => {});
       replacement.mount("#first");
       window.sdkTest.notifyMounted("first");
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardNumber", eventListeners: ["change"] },
@@ -178,7 +178,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       runtimePage,
     }) => {
       const logs = await runtimePage.evaluate(async (reverseCreation) => {
-        const { elements, logs } = window.sdkTest.makeElements();
+        const { elements } = window.sdkTest.makeElements();
         const handles = [
           elements.create("cardCvc", {}),
           elements.create("cardCvc", {}),
@@ -193,7 +193,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
         second.destroy();
         first.on("focus", () => {});
         await Promise.resolve();
-        return logs;
+        return window.sdkTest.listenerLogs();
       }, reverseCreation);
       expect(logs).toEqual([
         { componentType: "cardCvc", eventListeners: [] },
@@ -207,7 +207,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(() => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const mounted = (iframeId: string) =>
         window.sdkTest.notifyMounted(iframeId);
       const first = elements.create("cardCvc", {});
@@ -221,7 +221,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       replacement.mount("#first");
       mounted("first");
       replacement.on("focus", () => {});
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: ["ready"] },
@@ -235,7 +235,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       runtimePage,
     }) => {
       const logs = await runtimePage.evaluate((registerFirst) => {
-        const { elements, logs } = window.sdkTest.makeElements();
+        const { elements } = window.sdkTest.makeElements();
         const registration = elements.create("cardCvc", {});
         const mounting = elements.create("cardCvc", {});
         const register = () => registration.on("change", () => {});
@@ -246,7 +246,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
         registration.on("change", () => {});
         registration.on("ready", undefined);
         registration.onSDKHandleClick(() => Promise.resolve());
-        return logs;
+        return window.sdkTest.listenerLogs();
       }, registerFirst);
       expect(logs).toEqual([
         { componentType: "cardCvc", eventListeners: ["change"] },
@@ -262,7 +262,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const result = await runtimePage.evaluate(() => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const first = elements.create("cardCvc", {});
       const second = elements.create("cardCvc", {});
       first.on("ready", () => {});
@@ -270,9 +270,9 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       first.mount("#first");
       second.mount("#second");
       window.sdkTest.notifyMounted("first");
-      const afterFirstMount = logs.slice();
+      const afterFirstMount = window.sdkTest.listenerLogs();
       window.sdkTest.notifyMounted("second");
-      return { afterFirstMount, logs };
+      return { afterFirstMount, logs: window.sdkTest.listenerLogs() };
     });
     expect(result.afterFirstMount).toEqual([
       { componentType: "cardCvc", eventListeners: ["ready"] },
@@ -287,7 +287,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(() => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const registration = elements.create("cardCvc", {});
       elements.create("cardCvc", {}).mount("#first");
       registration.on("change", () => {});
@@ -295,7 +295,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       registration.on("change", () => {});
       window.sdkTest.notifyMounted("first");
       registration.on("focus", () => {});
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: ["change"] },
@@ -307,7 +307,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(() => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const mounted = () => window.sdkTest.notifyMounted("first");
       const registration = elements.create("cardCvc", {});
       const mounting = elements.create("cardCvc", {});
@@ -322,7 +322,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       mounted();
       registration.on("blur", () => {});
       replacementRegistration.on("focus", () => {});
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: ["ready"] },
@@ -335,7 +335,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(() => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const element = elements.create("cardCvc", {});
       element.on("change", () => {});
       for (let i = 0; i < 2; i++) {
@@ -344,7 +344,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
         element.unmount();
       }
       element.on("focus", () => {});
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: ["change"] },
@@ -356,14 +356,14 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(async () => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const registration = elements.create("cardCvc", {});
       elements.create("cardCvc", {}).mount("#first");
       window.sdkTest.notifyMounted("first");
       registration.on("change", () => {});
       await Promise.resolve();
       registration.on("focus", () => {});
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: [] },
@@ -376,7 +376,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
     runtimePage,
   }) => {
     const logs = await runtimePage.evaluate(async () => {
-      const { elements, logs } = window.sdkTest.makeElements();
+      const { elements } = window.sdkTest.makeElements();
       const registration = elements.create("cardCvc", {});
       elements.create("cardCvc", {}).mount("#first");
       registration.on("change", () => {});
@@ -386,7 +386,7 @@ test.describe.skip("Element listener logging @hermetic-only", () => {
       await Promise.resolve();
       window.sdkTest.notifyMounted("first");
       registration.on("focus", () => {});
-      return logs;
+      return window.sdkTest.listenerLogs();
     });
     expect(logs).toEqual([
       { componentType: "cardCvc", eventListeners: ["change"] },

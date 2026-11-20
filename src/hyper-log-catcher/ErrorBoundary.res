@@ -132,6 +132,29 @@ module ErrorCard = {
     ~publishableKey,
   ) => {
     let keys = Jotai.useAtomValue(JotaiAtoms.keys)
+    let sessionId = Jotai.useAtomValue(JotaiAtoms.sessionId)
+    React.useEffect0(() => {
+      LoggerContext.setSessionData(
+        ~sessionId,
+        ~merchantId=publishableKey !== "" ? publishableKey : keys.publishableKey,
+        (),
+      )
+      let details = [
+        ("component", componentName->JSON.Encode.string),
+        ("boundary_level", level->WebLoggerUtils.variantName->JSON.Encode.string),
+        (
+          "component_stack",
+          error.componentStack
+          ->Identity.anyTypeToJson
+          ->JSON.stringify
+          ->String.slice(~start=0, ~end=2048)
+          ->JSON.Encode.string,
+        ),
+      ]
+      let exn = error.error->JsExn.anyToExnInternal
+      SdkLogger.logCrash(~origin=ErrorBoundary, ~details, ~exn)
+      None
+    })
 
     let (divH, setDivH) = React.useState(_ => 0.0)
     let {iframeId} = keys

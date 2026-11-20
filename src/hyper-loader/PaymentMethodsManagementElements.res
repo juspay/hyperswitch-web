@@ -14,6 +14,7 @@ let make = (
   ~sdkAuthorization,
   ~analyticsMetadata,
   ~customBackendUrl,
+  ~loggerContext: LoggerContext.t,
 ) => {
   let hyperComponentName = PaymentMethodsManagementElements
   try {
@@ -168,6 +169,7 @@ let make = (
     let getElement = componentName =>
       HyperLoaderLogger.observeMerchantCall(
         ~event=HyperLoaderLogger.GetElement({surface: PaymentMethodsManagement}),
+        ~context=loggerContext,
         ~call=() => savedPaymentElement->Dict.get(componentName),
       )
     let updateInternal = newOptions => {
@@ -197,15 +199,17 @@ let make = (
     let update = newOptions =>
       HyperLoaderLogger.observeMerchantCall(
         ~event=HyperLoaderLogger.Update({surface: PaymentMethodsManagement}),
+        ~context=loggerContext,
         ~call=() => updateInternal(newOptions),
       )
     let fetchUpdates = () => {
-      HyperLoaderLogger.logMerchantCall(
+      HyperLoaderLogger.observeMerchantCall(
         ~event=HyperLoaderLogger.FetchUpdates({surface: PaymentMethodsManagement, implemented: false}),
+        ~context=loggerContext,
+        ~call=() => Promise.make((resolve, _) => {
+          setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
+        }),
       )
-      Promise.make((resolve, _) => {
-        setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
-      })
     }
 
     let createInternal = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) => {
@@ -256,7 +260,7 @@ let make = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-            LoggerContext.sharedContext(),
+            LoggerContext.sharedContext(~context=loggerContext, ()),
             ("customPodUri", customPodUri->JSON.Encode.string),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
@@ -296,6 +300,7 @@ let make = (
         mountPostMessage,
         ~appearance,
         ~isPaymentManagementElement=true,
+        ~context=loggerContext,
         ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
         ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
         ~isTrustedPaymentMessage,
@@ -307,6 +312,7 @@ let make = (
     let create = (componentTypeOrOptions: JSON.t, legacyOptions: Nullable.t<JSON.t>) =>
       HyperLoaderLogger.observeMerchantCall(
         ~event=HyperLoaderLogger.Create({surface: PaymentMethodsManagement}),
+        ~context=loggerContext,
         ~call=() => createInternal(componentTypeOrOptions, legacyOptions),
       )
     {
@@ -317,6 +323,7 @@ let make = (
       updateIntent: _ =>
         HyperLoaderLogger.observeMerchantCall(
           ~event=HyperLoaderLogger.UpdateIntent({surface: PaymentMethodsManagement, supported: false}),
+          ~context=loggerContext,
           ~call=() => Promise.resolve(JSON.Encode.null),
         ),
       createCardForm: () => defaultCardForm,
@@ -325,6 +332,7 @@ let make = (
   | e => {
       Sentry.captureException(e)
       SdkLogger.logCrash(
+        ~context=loggerContext,
         ~origin=EntryPoint,
         ~details=[("entry_point", "payment_management_elements_create"->JSON.Encode.string)],
         ~exn=e,

@@ -6,10 +6,13 @@ import GPay from "../../src/Payments/GPay.bs.js";
 import * as Atoms from "../../src/Utilities/JotaiAtoms.bs.js";
 import * as CommonHooks from "../../src/Hooks/CommonHooks.bs.js";
 import * as Elements from "../../src/hyper-loader/Elements.bs.js";
+import * as WebLoggerAdapter from "../../src/Logger/core/WebLoggerAdapter.bs.js";
 import * as PaymentHelpers from "../../src/Utilities/PaymentHelpers.bs.js";
+import * as LoggerConfig from "../../shared-code/sdk-utils/logging/LoggerConfig.bs.js";
+import * as LoggerQueue from "../../shared-code/sdk-utils/logging/LoggerQueue.bs.js";
 import clientList from "../recordings/base/client-list.json";
 
-export interface EventListenerLog {
+interface EventListenerLog {
   componentType: string;
   eventListeners: string[];
 }
@@ -47,6 +50,14 @@ type PaymentMethodsState =
 const keysAtom = Atoms.keys as PrimitiveAtom<SdkKeys>;
 const paymentMethodsAtom =
   Atoms.paymentMethodList as PrimitiveAtom<PaymentMethodsState>;
+const flushedListenerRows: { event_name: string; value: string }[] = [];
+
+WebLoggerAdapter.configure();
+LoggerConfig.configure(true, "");
+LoggerQueue.configure((payload: string) => {
+  flushedListenerRows.push(...JSON.parse(payload));
+  return true;
+});
 
 declare global {
   interface Window {
@@ -63,7 +74,6 @@ declare global {
 }
 
 export function makeElements() {
-  const logs: EventListenerLog[] = [];
   const ownedFrames: HTMLIFrameElement[] = [];
   const registerFrame = (iframe: HTMLIFrameElement | null) => {
     if (iframe) ownedFrames.push(iframe);
@@ -97,7 +107,24 @@ export function makeElements() {
     isTrustedMessage,
     registerFrame,
   );
-  return { elements, logs };
+  return { elements };
+}
+
+export function listenerLogs(): EventListenerLog[] {
+  return [
+    ...flushedListenerRows,
+    ...LoggerQueue.rows.map(
+      ({ row }: { row: { event_name: string; value: string } }) => row,
+    ),
+  ]
+    .filter(
+      (row: { event_name: string }) =>
+        row.event_name === "state.payment_element_event_listeners",
+    )
+    .map((row: { value: string }) => {
+      const { component_type, event_listeners } = JSON.parse(row.value).details;
+      return { componentType: component_type, eventListeners: event_listeners };
+    });
 }
 
 export function notifyMounted(id: string): void {

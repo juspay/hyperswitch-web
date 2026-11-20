@@ -102,6 +102,12 @@ let setPaymentIdFromCredentials = (~clientSecret="", ~sdkAuthorization=?) => {
   sdkAuthorization->Option.flatMap(pmSessionIdOfSdkAuthorization)->Option.forEach(setPmSessionId)
 }
 
+let clearPaymentIdentity = () => {
+  let previous = context.contents
+  let next = {...previous, paymentId: "", pmSessionId: ""}
+  context := next
+}
+
 let setPaymentIdFromClientSecret = clientSecret =>
   clientSecret->paymentIdOfClientSecret->setPaymentId
 
@@ -151,8 +157,12 @@ let startSessionFromMessage = message =>
       sdkAuthorization
       ->pmSessionIdOfSdkAuthorization
       ->Option.getOr(readField("pmSessionId"))
+    let sessionId = readField("sdkSessionId")
+    if context.contents.sessionId === "" {
+      LoggerQueue.bindInitialSession(sessionId)
+    }
     setSessionData(
-      ~sessionId=readField("sdkSessionId"),
+      ~sessionId,
       ~merchantId=readField("publishableKey"),
       ~paymentId,
       ~pmSessionId,

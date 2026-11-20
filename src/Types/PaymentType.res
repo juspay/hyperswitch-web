@@ -1670,6 +1670,11 @@ let shouldMaskField = path => {
 let itemToObjMapper = dict => {
   unknownKeysWarning(allowedPaymentElementOptions, dict, "options")
 
+  HyperLoaderLogger.logMerchantProps(
+    ~event=PaymentElementOptions({surface: PaymentElement}),
+    ~config=dict->JSON.Encode.object,
+    ~isSensitive=shouldMaskField,
+  )
 
   {
     defaultValues: getDefaultValues(dict, "defaultValues"),

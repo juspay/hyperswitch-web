@@ -112,10 +112,8 @@ let make = () => {
         ~paymentMethod=OpenBanking(Plaid),
         ~callback=(publicToken, _) => {
           messageParentWindow([
-            ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
-            ("isExited", true->JSON.Encode.bool),
-            ("publicToken", ""->JSON.Encode.string),
+            ("publicToken", publicToken->JSON.Encode.string),
           ])
           if isForceSync {
             callbackOnSuccessOfPlaidPaymentsFlow()->ignore

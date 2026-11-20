@@ -190,6 +190,8 @@ let make = (
           obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider)
         <SavedCardItem
           key={"ctp_" ++ i->Int.toString}
+          logListSource="click_to_pay"
+          logCardBrand={obj.paymentCardDescriptor}
           setPaymentToken
           isActive={paymentTokenVal == customerMethod.paymentToken}
           paymentItem=customerMethod

@@ -7,8 +7,9 @@ let sendPayload = payload =>
 
 let configure = () => {
   LoggerQueue.configure(~sendPayload)
-  Window.addEventListener("visibilitychange", _ =>
-    Window.visibilityState === "hidden" ? LoggerQueue.drain() : ()
-  )
-  Window.addEventListener("pagehide", _ => LoggerQueue.drain())
+  Window.addEventListener("pagehide", _ => {
+    if LoggerContext.current().sessionId !== "" || !LoggerQueue.waitingForInitialSession() {
+      LoggerQueue.drain()
+    }
+  })
 }

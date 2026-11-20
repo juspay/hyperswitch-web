@@ -621,7 +621,7 @@ let make = (
             scope: PaymentMethodSessionLogger.FullCard,
             vault: "vgs",
           })
-          let logOutcomeOnce = (~outcome, ~details=[], ~exn=?) =>
+          let logOutcomeOnce = (~outcome, ~details=[]) =>
             if !settled.contents {
               settled := true
               PaymentMethodSessionLogger.logApi(
@@ -630,7 +630,6 @@ let make = (
                 ~outcome,
                 ~details,
                 ~startedAt,
-                ~exn?,
                 ~paymentMethod=Card,
               )
             }
@@ -642,8 +641,11 @@ let make = (
             ~paymentMethod=Card,
           )
 
-          let settleWithFailure = (message: string) => {
-            logOutcomeOnce(~outcome=Failed, ~exn=message->JSON.Encode.string)
+          let settleWithFailure = (message: string, ~reason: string) => {
+            logOutcomeOnce(
+              ~outcome=Failed,
+              ~details=[("reason", reason->JSON.Encode.string)],
+            )
             resolve(
               makeErrorEnvelope(~code="tokenization_failed", ~message, ~errorType="api_error"),
             )
@@ -668,6 +670,7 @@ let make = (
               | _ =>
                 settleWithFailure(
                   `VGS returned no tokenization response (status ${status->describeJson}): ${data->describeJson}`,
+                  ~reason="invalid_response",
                 )
               },
           )
@@ -686,6 +689,7 @@ let make = (
                 | Some(readable) => readable
                 | None => stringified->getNonEmptyOption->Option.getOr("VGS submit failed")
                 },
+                ~reason="submit_error",
               )
             },
           )
@@ -696,12 +700,12 @@ let make = (
             // VGS *rejects* this when the fields aren't loaded yet; unadopted, this promise never settles.
             Promise.resolve(submitReturn)
             ->Promise.catch(exn => {
-              settleWithFailure(`VGS submit rejected: ${exn->exceptionMessage}`)
+              settleWithFailure(`VGS submit rejected: ${exn->exceptionMessage}`, ~reason="submit_rejected")
               Promise.resolve(JSON.Encode.null)
             })
             ->ignore
           } catch {
-          | exn => settleWithFailure(exn->exceptionMessage)
+          | exn => settleWithFailure(exn->exceptionMessage, ~reason="submit_exception")
           }
         })
       }
