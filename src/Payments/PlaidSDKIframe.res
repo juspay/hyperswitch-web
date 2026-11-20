@@ -59,6 +59,14 @@ let make = () => {
       let return_url = dict->getString("return_url", "")
 
       switch status {
+      | "succeeded" | "requires_customer_action" | "processing" => ()
+      | _ =>
+        SdkLogger.logLifecycle(
+          ~event=BankAuthSyncFailed({status: status}),
+          ~paymentMethod=OpenBanking(Plaid),
+        )
+      }
+      switch status {
       | "succeeded" | "requires_customer_action" | "processing" =>
         postSubmitResponse(~jsonData=json, ~url=return_url)
       | "failed" =>
@@ -74,35 +82,61 @@ let make = () => {
       }
       messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
     } catch {
-    | _ => ()
+    | exn =>
+      SdkLogger.logLifecycle(
+        ~event=BankAuthSyncFailed({status: "sync_exception"}),
+        ~paymentMethod=OpenBanking(Plaid),
+        ~exn,
+      )
     }
   }
 
   let initializePlaid = () => {
+    let startedAt = Date.now()
+    SdkLogger.logFunction(~event=PlaidCreate, ~outcome=Started, ~paymentMethod=OpenBanking(Plaid))
     Plaid.create({
       token: linkToken,
-      onLoad: _ => (),
-      onSuccess: (publicToken, _) => {
-        messageParentWindow([
-          ("isPlaid", true->JSON.Encode.bool),
-          ("publicToken", publicToken->JSON.Encode.string),
-        ])
-        if isForceSync {
-          callbackOnSuccessOfPlaidPaymentsFlow()->ignore
-        }
-      },
-      onExit: _ => {
-        if isForceSync {
-          callbackOnSuccessOfPlaidPaymentsFlow()->ignore
-        } else {
+      onLoad: SdkLogger.observeFunctionCallback(
+        ~event=OnLoad,
+        ~paymentMethod=OpenBanking(Plaid),
+        ~callback=() =>
+          SdkLogger.logFunction(
+            ~event=PlaidCreate,
+            ~outcome=Done,
+            ~startedAt,
+            ~paymentMethod=OpenBanking(Plaid),
+          ),
+      ),
+      onSuccess: SdkLogger.observeFunctionCallback(
+        ~event=OnSuccess,
+        ~paymentMethod=OpenBanking(Plaid),
+        ~callback=(publicToken, _) => {
           messageParentWindow([
             ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
             ("isExited", true->JSON.Encode.bool),
             ("publicToken", ""->JSON.Encode.string),
           ])
-        }
-      },
+          if isForceSync {
+            callbackOnSuccessOfPlaidPaymentsFlow()->ignore
+          }
+        },
+      ),
+      onExit: SdkLogger.observeFunctionCallback(
+        ~event=OnExit,
+        ~paymentMethod=OpenBanking(Plaid),
+        ~callback=_ =>
+          if isForceSync {
+            callbackOnSuccessOfPlaidPaymentsFlow()->ignore
+          } else {
+            messageParentWindow([
+              ("fullscreen", false->JSON.Encode.bool),
+              ("isPlaid", true->JSON.Encode.bool),
+              ("isExited", true->JSON.Encode.bool),
+              ("publicToken", ""->JSON.Encode.string),
+            ])
+          },
+      ),
     }).open_()
   }
 

@@ -19,6 +19,7 @@ let make = (~cvcProps: CardUtils.cvcProps) => {
   let isEmpty = cvcNumber == ""
 
   let setUserError = message => {
+    SdkLogger.logLifecycle(~event=FormValidationFailed({reason: message}))
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
 

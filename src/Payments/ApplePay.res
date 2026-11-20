@@ -88,6 +88,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
     ~paymentType=paymentMethodType,
+    ~loggedPaymentMethod=Wallet(ApplePay),
   )
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
   SubscriptionEventHooks.useEmitFormStatus(
@@ -269,6 +270,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onApplePayButtonClicked = () => {
+    SdkLogger.logUser(
+      ~event=ExpressCheckoutClicked({testMode: ?(isTestMode ? Some(true) : None)}),
+      ~paymentMethod=Wallet(ApplePay),
+    )
     if isTestMode {
       Console.warn("Apple Pay button clicked in test mode - interaction disabled")
     } else {
@@ -324,6 +329,12 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           resolve()
         })
         ->catch(exn => {
+          SdkLogger.logLifecycle(
+            ~event=WalletFlowFailed({reason: MessageHandlingFailed}),
+            ~paymentMethod=Wallet(ApplePay),
+            ~exn,
+            ~message="Apple Pay payment handling threw after one-click confirmation",
+          )
           resolve()
         })
         ->ignore
@@ -331,9 +342,15 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     }
   }
 
-  let (requiredFields, _, _) = DynamicFieldsUtils.useSuperpositionRequiredFields(
+  let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
     ~paymentMethod,
     ~paymentMethodType,
+  )
+  DynamicFieldsUtils.useLogDynamicFieldsRendered(
+    ~fields=requiredFields,
+    ~paymentMethod,
+    ~resolutionContext,
+    ~isSavedCardFlow=!isWallet,
   )
 
   ApplePayHelpers.useHandleApplePayResponse(

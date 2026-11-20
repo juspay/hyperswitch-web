@@ -23,6 +23,10 @@ let make = () => {
 
   let onKlarnaClick = async _ev => {
     try {
+      SdkLogger.logUser(
+        ~event=ExpressCheckoutClicked({testMode: ?(isTestMode ? Some(true) : None)}),
+        ~paymentMethod=PayLater(Klarna),
+      )
       if isTestMode {
         Console.warn("Klarna checkout button clicked in test mode - interaction disabled")
         resolve()
@@ -59,6 +63,11 @@ let make = () => {
       }
     } catch {
     | exn =>
+      SdkLogger.logLifecycle(
+        ~event=WalletFlowFailed({reason: PaymentDataFailed}),
+        ~paymentMethod=PayLater(Klarna),
+        ~exn,
+      )
       resolve()
     }
   }

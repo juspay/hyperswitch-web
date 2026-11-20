@@ -4,6 +4,7 @@ let make = (
   ~value: JotaiAtomTypes.field,
   ~setValue: (JotaiAtomTypes.field => JotaiAtomTypes.field) => unit,
   ~fieldName,
+  ~fieldKey="",
   ~options,
   ~disabled=false,
   ~className="",
@@ -16,6 +17,7 @@ let make = (
   let {parentURL, iframeId} = Jotai.useAtomValue(keys)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
   let elementType = PaymentTypeContext.usePaymentType()->CardThemeType.getPaymentModeToString
+  let loggedField = fieldKey === "" ? fieldName : fieldKey
 
   let getClassName = initialLabel => {
     if value.value->String.length == 0 {
@@ -40,6 +42,9 @@ let make = (
   }, [options])
   let handleFocus = _ => {
     setInputFocused(_ => true)
+    if loggedField->String.length > 0 {
+      SdkLogger.logUser(~event=FieldFocused({field: loggedField}))
+    }
     Utils.handleOnFocusPostMessage(~iframeId, ~elementType, ~targetOrigin=parentURL)
   }
   let focusClass = if inputFocused || value.value->String.length > 0 {

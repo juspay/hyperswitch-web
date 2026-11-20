@@ -134,14 +134,19 @@ let useHandleGooglePayResponse = (
             "statusCode",
             gpayErrorDict->getDictFromDict("_1")->getString("statusCode", ""),
           )
-        if (
-          statusCode === "CANCELED" &&
-            dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
-        ) {
+        let isMatchingFlow = dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
+        if statusCode === "CANCELED" && isMatchingFlow {
           emitter.emitPaymentMethodFlowCancel(
             ~paymentMethod="wallet",
             ~paymentMethodType="google_pay",
             ~canRetryPayment=true,
+          )
+        } else if statusCode !== "CANCELED" && isMatchingFlow {
+          SdkLogger.logLifecycle(
+            ~event=WalletFlowFailed({reason: SheetFailed}),
+            ~paymentMethod=Wallet(GooglePay),
+            ~exn=dict->getJsonObjectFromDict("gpayError")->JsExn.anyToExnInternal,
+            ~message="Google Pay sheet rejected or client unavailable (gpayError from parent)",
           )
         }
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
@@ -204,11 +209,23 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
         handleGooglePayClicked(~sessionObj, ~componentName, ~iframeId, ~readOnly=options.readOnly)
       } else if areRequiredFieldsEmpty {
+        if confirm.doSubmit {
+          SdkLogger.logLifecycle(
+            ~event=FormValidationFailed({reason: localeString.enterFieldsText}),
+            ~paymentMethod=Wallet(GooglePay),
+          )
+        }
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterFieldsText,
         )
       } else if !areRequiredFieldsValid {
+        if confirm.doSubmit {
+          SdkLogger.logLifecycle(
+            ~event=FormValidationFailed({reason: localeString.enterValidDetailsText}),
+            ~paymentMethod=Wallet(GooglePay),
+          )
+        }
         postFailedSubmitResponse(
           ~errortype="validation_error",
           ~message=localeString.enterValidDetailsText,

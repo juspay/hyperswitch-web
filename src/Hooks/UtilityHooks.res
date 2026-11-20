@@ -27,13 +27,29 @@ let useHandlePostMessages = (
   ~paymentType,
   ~savedMethod=false,
   ~enabled=true,
+  ~loggedPaymentMethod: option<LoggerPaymentMethod.paymentMethod>=?,
 ) => {
+  let wasComplete = React.useRef(false)
+
   React.useEffect(() => {
     if enabled {
       Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType)
     }
     None
   }, (complete, empty, paymentType, enabled))
+
+  React.useEffect(() => {
+    if enabled {
+      if complete && !wasComplete.current {
+        SdkLogger.logState(
+          ~event=PaymentFormCompleted({savedMethod: savedMethod}),
+          ~paymentMethod=?loggedPaymentMethod,
+        )
+      }
+    }
+    wasComplete.current = complete
+    None
+  }, (complete, paymentType, savedMethod, enabled))
 }
 
 let useIsCustomerAcceptanceRequired = (
@@ -101,4 +117,19 @@ let useUpdateRedirectionFlags = () => {
     })
   }
   updateRedirectionFlagsAtom
+}
+
+let useLogAppRendered = (~isRendered) => {
+  let launchTime = Jotai.useAtomValue(JotaiAtoms.launchTime)
+  let appRenderedLogged = React.useRef(false)
+  React.useEffect(() => {
+    if isRendered && !appRenderedLogged.current {
+      appRenderedLogged.current = true
+      SdkLogger.logLifecycle(
+        ~event=AppRendered,
+        ~durationMs=?launchTime > 0.0 ? Some(Date.now() -. launchTime) : None,
+      )
+    }
+    None
+  }, (isRendered, launchTime))
 }

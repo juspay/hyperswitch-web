@@ -206,6 +206,7 @@ let make = (
   ~isTestMode=false,
   ~isSdkParamsEnabled=false,
 ) => {
+  LoggerContext.setSessionData(~sessionId, ~merchantId=publishableKey, ())
 
   switch hyperComponentName {
   | Elements =>

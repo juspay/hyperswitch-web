@@ -79,6 +79,15 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
+    if value !== selectedOption {
+      SdkLogger.logUser(
+        ~event=PaymentMethodSelected({method: value}),
+        ~paymentMethod=?PaymentUtils.loggerPaymentMethodOf(
+          ~paymentMethodName=value,
+          ~paymentMethods=paymentMethodListValue.payment_methods,
+        ),
+      )
+    }
     setSelectedOption(_ => value)
     CardUtils.blurRef(selectRef)
   }

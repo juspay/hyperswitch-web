@@ -110,6 +110,8 @@ let make = (
   ~isVaultCvcFlow=false,
   ~setCvcIframeRef=_ => (),
   ~setSavedCardCvcState=_ => (),
+  ~logListSource: option<string>=?,
+  ~logCardBrand: option<string>=?,
 ) => {
   let {themeObj, config, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {
@@ -273,6 +275,18 @@ let make = (
       }
       onClick={_ => {
         open JotaiAtomTypes
+        SdkLogger.logUser(
+          ~event=SavedMethodSelected({
+            requiresCvv: paymentItem.requiresCvv,
+            isCardExpired,
+            listSource: ?logListSource,
+            cardBrand: ?logCardBrand,
+          }),
+          ~paymentMethod=?LoggerPaymentMethod.fromPair(
+            ~method=paymentItem.paymentMethod,
+            ~methodType=paymentMethodType,
+          ),
+        )
         setPaymentToken(_ => {
           paymentToken: paymentItem.paymentToken,
           customerId: paymentItem.customerId,

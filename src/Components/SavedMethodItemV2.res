@@ -64,6 +64,16 @@ let make = (
   let isManageModeActive = managePaymentMethod === paymentToken
 
   let handleOnClick = _ => {
+    SdkLogger.logUser(
+      ~event=SavedMethodSelected({
+        requiresCvv: shouldRenderCVV,
+        isCardExpired,
+      }),
+      ~paymentMethod=?LoggerPaymentMethod.fromPair(
+        ~method=paymentMethodType,
+        ~methodType=paymentItem.paymentMethodSubType,
+      ),
+    )
     setPaymentTokenAtom(_ => {
       paymentToken,
       customerId,
@@ -152,6 +162,7 @@ let make = (
                   style={color: themeObj.colorPrimary}
                   onClick={event => {
                     ReactEvent.Mouse.stopPropagation(event)
+                    SdkLogger.logUser(~event=SavedMethodUpdateRequested)
                     handleUpdate(paymentItem)->ignore
                   }}>
                   {React.string("Save")}
@@ -163,6 +174,7 @@ let make = (
                   className="cursor-pointer ml-4 mb-[6px]"
                   onClick={event => {
                     ReactEvent.Mouse.stopPropagation(event)
+                    SdkLogger.logUser(~event=SavedMethodDeleteRequested)
                     handleDeleteV2(paymentItem)->ignore
                   }}
                 />
@@ -175,6 +187,7 @@ let make = (
                   className="cursor-pointer ml-4 mb-[6px]"
                   onClick={event => {
                     ReactEvent.Mouse.stopPropagation(event)
+                    SdkLogger.logUser(~event=ViewOpened({view: ManageSavedMethod}))
                     handleManage()
                   }}
                 />

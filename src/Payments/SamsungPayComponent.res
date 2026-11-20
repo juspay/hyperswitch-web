@@ -13,6 +13,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let {iframeId} = Jotai.useAtomValue(keys)
   let status = CommonHooks.useScript(
     "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js",
+    ~resourceEvent=SdkLogger.SamsungPayScript,
   )
   let isWallet = walletOptions->Array.includes("samsung_pay")
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
@@ -61,7 +62,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   }
 
   let buttonStyle = {
-    "onClick": onSamsungPaymentButtonClick,
+    "onClick": SdkLogger.observeFunctionCallback(
+      ~event=OnClick,
+      ~paymentMethod=Wallet(SamsungPay),
+      ~callback=onSamsungPaymentButtonClick,
+    ),
     "buttonStyle": "black",
     "type": "buy",
   }->Identity.anyTypeToJson

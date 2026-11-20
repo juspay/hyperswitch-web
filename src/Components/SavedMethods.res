@@ -34,6 +34,7 @@ let make = (
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let setUserError = message => {
+    SdkLogger.logLifecycle(~event=FormValidationFailed({reason: message}))
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
   let {
@@ -342,6 +343,10 @@ let make = (
     ~empty,
     ~paymentType=paymentMethodType,
     ~savedMethod=true,
+    ~loggedPaymentMethod=?LoggerPaymentMethod.fromPair(
+      ~method=customerMethod.paymentMethod,
+      ~methodType=customerMethod.paymentMethodType->Option.getOr(""),
+    ),
   )
   SubscriptionEventHooks.useEmitFormStatus(~empty, ~complete)
   SubscriptionEventHooks.useEmitSurchargeInfo(~surchargeDetails=eligibilitySurchargeDetails)
@@ -698,6 +703,11 @@ let make = (
     (loadSavedCards === PaymentType.LoadingSavedCards || clickToPayConfig.isReady->Option.isNone)
   }, (savedCardlength, loadSavedCards, showPaymentMethodsScreen, clickToPayConfig.isReady))
 
+  let switchToNewPaymentMethods = () => {
+    SdkLogger.logUser(~event=ViewOpened({view: NewPaymentMethods}))
+    setShowPaymentMethodsScreen(_ => true)
+  }
+
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if enableSavedPaymentShimmer {
       <PaymentElementShimmer.SavedPaymentCardShimmer />
@@ -725,7 +735,7 @@ let make = (
     </RenderIf>
     <RenderIf condition={!enableSavedPaymentShimmer && !groupSavedMethodsSeparately}>
       <SwitchViewButton
-        onClick={_ => setShowPaymentMethodsScreen(_ => true)}
+        onClick={_ => switchToNewPaymentMethods()}
         icon={<Icon name="circle-plus" size=22 />}
         title={localeString.newPaymentMethods}
         ariaLabel="Click to use new payment methods"
@@ -734,7 +744,7 @@ let make = (
           let key = JsxEvent.Keyboard.key(event)
           let keyCode = JsxEvent.Keyboard.keyCode(event)
           if key == "Enter" || keyCode == 13 {
-            setShowPaymentMethodsScreen(_ => true)
+            switchToNewPaymentMethods()
           }
         }}
       />

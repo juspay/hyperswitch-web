@@ -3,6 +3,7 @@ open JotaiAtomTypes
 let keys = Jotai.atom(CommonHooks.defaultkeys)
 let configAtom = Jotai.atom(CardTheme.defaultJotaiConfig)
 let isConfigReady = Jotai.atom(false)
+let launchTime = Jotai.atom(0.0)
 let portalNodes = Jotai.atom(PortalState.defaultDict)
 let elementOptions = Jotai.atom(ElementType.defaultOptions)
 let optionAtom = Jotai.atom(PaymentType.defaultOptions)
