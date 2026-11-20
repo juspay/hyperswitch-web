@@ -299,7 +299,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError) => {
           parentOriginRef.current = Some(ev.origin)
           dict->Dict.set("parentURL", ev.origin->JSON.Encode.string)
           setKeys(prev => {...prev, parentURL: ev.origin})
-
           // Set iframeId for ALL elements including individual card elements (cardNumber, cardExpiry, cardCvc)
           if dict->getDictIsSome("iframeId") {
             setKeys(prev => {
