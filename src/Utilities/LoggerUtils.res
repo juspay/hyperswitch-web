@@ -11,9 +11,9 @@ let describeErrorPayload = data => {
   | value => value
   }
   [
-    ("error_type", errorType->JSON.Encode.string),
-    ("error_code", errorDict->CommonUtils.getString("code", "")->JSON.Encode.string),
-    ("error_message", "error body not logged"->JSON.Encode.string),
+    ("errorType", errorType->JSON.Encode.string),
+    ("errorCode", errorDict->CommonUtils.getString("code", "")->JSON.Encode.string),
+    ("errorMessage", "error body not logged"->JSON.Encode.string),
   ]
 }
 
@@ -65,10 +65,10 @@ let logApi = (
 }
 
 /* The checkpoint asks whether the element was usable, so readiness is in the row:
-   before_ready means the click landed before ready was emitted — a shimmer, or
+   beforeReady means the click landed before ready was emitted — a shimmer, or
    partly loaded sections under progressive loading. One row per readiness state,
    so a pre-ready click cannot consume the checkpoint — funnel queries read
-   before_ready = false. */
+   beforeReady = false. */
 let hasLoggedInteractionWhenReady = ref(false)
 let hasLoggedInteractionBeforeReady = ref(false)
 
@@ -81,7 +81,7 @@ let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~kind, ~field="",
       ~value=[
         ("kind", kind->JSON.Encode.string),
         ("field", field->JSON.Encode.string),
-        ("before_ready", !isReady->JSON.Encode.bool),
+        ("beforeReady", !isReady->JSON.Encode.bool),
       ]
       ->Dict.fromArray
       ->JSON.Encode.object
@@ -120,7 +120,7 @@ let logConfirmTriggered = (
   logger.setLogInfo(
     ~value=[
       ("trigger", trigger->JSON.Encode.string),
-      ("payment_method_type", paymentMethodType->JSON.Encode.string),
+      ("paymentMethodType", paymentMethodType->JSON.Encode.string),
     ]
     ->Dict.fromArray
     ->JSON.Encode.object
@@ -659,8 +659,11 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | UPDATE_SDK
   | DYNAMIC_FIELDS_RENDERED
   | DYNAMIC_FIELDS_CONFIG
-  | SDK_SCRIPT_LOADED
+  | HYPERLOADER_SCRIPT_LOADED
+  | PAYMENT_ELEMENT_MOUNT_CALLED
   | PAYMENT_ELEMENT_MOUNTED
+  | PRE_MOUNT_LOADER_INIT
+  | PRE_MOUNT_LOADER_CLEANUP
   | PAYMENT_ELEMENT_LOADING
   | PAYMENT_ELEMENT_RENDERED
   | USER_INTERACTED

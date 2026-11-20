@@ -124,12 +124,11 @@ type eventName =
   | DYNAMIC_FIELDS_RENDERED
   | DYNAMIC_FIELDS_CONFIG
   | CARD_FORM_FLOW
-  /* Loader script evaluation only — for script-delivery
-     monitoring, and the one event sent without a logger instance. A second
-     emission site makes "delivered but never initialised" uncountable: give a new
-     script its own event name and `type`. */
-  | SDK_SCRIPT_LOADED
+  | HYPERLOADER_SCRIPT_LOADED
+  | PAYMENT_ELEMENT_MOUNT_CALLED
   | PAYMENT_ELEMENT_MOUNTED
+  | PRE_MOUNT_LOADER_INIT
+  | PRE_MOUNT_LOADER_CLEANUP
   | PAYMENT_ELEMENT_LOADING
   | PAYMENT_ELEMENT_RENDERED
   | USER_INTERACTED

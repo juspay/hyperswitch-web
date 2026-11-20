@@ -173,7 +173,8 @@ let make = (
     // Unique per-instance ID to scope event listener names and prevent collisions.
     let elementInstanceId = generateRandomString(8)
 
-    let hasLoggedMount = ref(false)
+    let hasLoggedMountCalled = ref(false)
+    let hasLoggedIframeMounted = ref(false)
 
     let setPaymentIframeRef = ref => {
       mountedIframeRef := ref
@@ -455,17 +456,13 @@ let make = (
       ensureWalletOneClickListener(logger, ~ownerId=elementInstanceId, ~isTrustedMessage)
       mountId := selector
 
-      /* Every merchant-facing .mount() lands here, so surface_family names the
-         flow: "element" = elements.create(...), "payments" = paymentsGroup field,
-         "vault" = cardFormGroup / vault CVC. paymentMethodsSDK is excluded — a
-         field iframe mounts it for itself, the merchant never does. */
-      if !hasLoggedMount.contents && componentType !== "paymentMethodsSDK" {
-        hasLoggedMount := true
-        let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_MOUNTED
+      if !hasLoggedMountCalled.contents && componentType !== "paymentMethodsSDK" {
+        hasLoggedMountCalled := true
+        let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_MOUNT_CALLED
         logger.setLogInfo(
           ~value=[
-            ("component_type", componentType->JSON.Encode.string),
-            ("surface_family", surfaceFamily->Option.getOr("element")->JSON.Encode.string),
+            ("componentType", componentType->JSON.Encode.string),
+            ("surfaceFamily", surfaceFamily->Option.getOr("element")->JSON.Encode.string),
           ]
           ->Dict.fromArray
           ->JSON.Encode.object
@@ -747,6 +744,22 @@ let make = (
             ->Window.setTransition(
               animateResize ? "height 0.35s ease 0s, opacity 0.4s ease 0.1s" : "none",
             )
+
+            if !hasLoggedIframeMounted.contents && componentType !== "paymentMethodsSDK" {
+              hasLoggedIframeMounted := true
+              let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_MOUNTED
+              logger.setLogInfo(
+                ~value=[
+                  ("componentType", componentType->JSON.Encode.string),
+                  ("surfaceFamily", surfaceFamily->Option.getOr("element")->JSON.Encode.string),
+                  ("iframeId", iframeElementId->JSON.Encode.string),
+                ]
+                ->Dict.fromArray
+                ->JSON.Encode.object
+                ->JSON.stringify,
+                ~eventName,
+              )
+            }
           | None => ()
           }
         }

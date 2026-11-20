@@ -296,8 +296,10 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       DDC_FLOW,
       GOOGLE_PAY_SCRIPT,
       GOOGLE_PAY_FLOW,
-      SDK_SCRIPT_LOADED,
+      HYPERLOADER_SCRIPT_LOADED,
+      PAYMENT_ELEMENT_MOUNT_CALLED,
       PAYMENT_ELEMENT_MOUNTED,
+      PRE_MOUNT_LOADER_CLEANUP,
       PAYMENT_ELEMENT_LOADING,
       PAYMENT_ELEMENT_RENDERED,
       USER_INTERACTED,
@@ -351,6 +353,76 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     latency > 0. ? latency->Float.toString : ""
   }
 
+  let checkAndPushMissedEvents = (eventName, paymentMethod) => {
+    switch eventName {
+    | PAYMENT_ATTEMPT => {
+        let paymentMethodChangedEventStr = PAYMENT_METHOD_CHANGED->eventNameToStrMapper
+        let paymentDataFilledEventStr = PAYMENT_DATA_FILLED->eventNameToStrMapper
+        let localTimestamp = Date.now()->Float.toString
+        let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
+        let paymentMethodChangedEvent =
+          events.contents->Dict.get(paymentMethodChangedEventStr)->Option.isNone
+        let paymentDataFilledEvent =
+          events.contents->Dict.get(paymentDataFilledEventStr)->Option.isNone
+        if paymentMethodChangedEvent {
+          {
+            logType: INFO,
+            timestamp: localTimestamp,
+            sessionId: sessionId.contents,
+            source: sourceRef.contents,
+            version: GlobalVars.repoVersion,
+            value: "",
+            // internalMetadata: "",
+            category: USER_EVENT,
+            paymentId: getPaymentId(),
+            merchantId: merchantId.contents,
+            browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+            browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+            platform: Window.Navigator.platform,
+            userAgent: Window.Navigator.userAgent,
+            appId: "",
+            eventName: PAYMENT_METHOD_CHANGED,
+            latency: "",
+            paymentMethod,
+            firstEvent: true,
+            metadata: metadata.contents,
+          }
+          ->conditionalLogPush
+          ->ignore
+          events.contents->Dict.set(paymentMethodChangedEventStr, localTimestampFloat)
+        }
+        if paymentDataFilledEvent {
+          {
+            logType: INFO,
+            timestamp: localTimestamp,
+            sessionId: sessionId.contents,
+            source: sourceRef.contents,
+            version: GlobalVars.repoVersion,
+            value: "",
+            // internalMetadata: "",
+            category: USER_EVENT,
+            paymentId: getPaymentId(),
+            merchantId: merchantId.contents,
+            browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+            browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+            platform: Window.Navigator.platform,
+            userAgent: Window.Navigator.userAgent,
+            appId: "",
+            eventName: PAYMENT_DATA_FILLED,
+            latency: "",
+            paymentMethod,
+            firstEvent: true,
+            metadata: metadata.contents,
+          }
+          ->conditionalLogPush
+          ->ignore
+          events.contents->Dict.set(paymentDataFilledEventStr, localTimestampFloat)
+        }
+      }
+    | _ => ()
+    }
+  }
+
   let setLogInfo = (
     ~value,
     // ~internalMetadata="",
@@ -361,6 +433,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     ~logCategory=USER_EVENT,
     ~paymentMethod="",
   ) => {
+    checkAndPushMissedEvents(eventName, paymentMethod)
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = switch latency {

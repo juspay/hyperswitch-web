@@ -13,7 +13,7 @@ let sendPromiseData = (promise, key, ~targetOrigin) => {
   executePromise()->ignore
 }
 
-let useMessageHandler = getMessageHandler => {
+let useMessageHandler = (~logger: HyperLoggerTypes.loggerMake, getMessageHandler) => {
   React.useEffect(_ => {
     let processMessage = getMessageHandler()
     let parentOrigin = ref(None)
@@ -38,6 +38,13 @@ let useMessageHandler = getMessageHandler => {
       Utils.messageParentWindow(message, ~targetOrigin=parentOrigin.contents->Option.getOr("*"))
     }
 
+    let hasLoggedCleanup = ref(false)
+    let logCleanup = () =>
+      if !hasLoggedCleanup.contents {
+        hasLoggedCleanup := true
+        logger.setLogInfo(~value="", ~eventName=PRE_MOUNT_LOADER_CLEANUP)
+      }
+
     let setupMessageListener = _ => {
       Window.addEventListener("message", messageHandler)
       sendLifecycleMessage([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
@@ -46,6 +53,7 @@ let useMessageHandler = getMessageHandler => {
     let cleanupMessageListener = _ => {
       Window.removeEventListener("message", messageHandler)
       sendLifecycleMessage([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
+      logCleanup()
     }
 
     let handleCleanUpEventListener = (ev: Window.event) => {
@@ -68,6 +76,8 @@ let useMessageHandler = getMessageHandler => {
     Window.addEventListener("message", handleResendMountedCallback)
 
     setupMessageListener()
+
+    logger.setLogInfo(~value="", ~eventName=PRE_MOUNT_LOADER_INIT)
 
     Some(
       () => {
@@ -176,7 +186,7 @@ module PreMountLoaderForElements = {
     ~isTestMode=false,
     ~isSdkParamsEnabled=false,
   ) => {
-    useMessageHandler(() =>
+    useMessageHandler(~logger, () =>
       getMessageHandlerV1Elements(
         ~sdkAuthorization,
         ~clientSecret,
@@ -197,7 +207,7 @@ module PreMountLoaderForElements = {
 module PreMountLoaderForPMMElements = {
   @react.component
   let make = (~logger, ~endpoint, ~customPodUri, ~pmSessionId, ~sdkAuthorization) => {
-    useMessageHandler(() =>
+    useMessageHandler(~logger, () =>
       getMessageHandlerV2PMM(~pmSessionId, ~sdkAuthorization, ~logger, ~customPodUri, ~endpoint)
     )
 

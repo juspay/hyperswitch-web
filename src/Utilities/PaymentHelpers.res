@@ -569,14 +569,7 @@ let rec intentCall = (
                 ~optLogger,
                 ~value=[
                   ("status", intent.status->JSON.Encode.string),
-                  ("next_action_type", nextActionType->JSON.Encode.string),
-                  (
-                    "has_next_action",
-                    (intent.status === "requires_customer_action" && nextActionType !== "")
-                    ->JSON.Encode.bool,
-                  ),
-                  ("leaves_page", (nextActionType === "redirect_to_url")->JSON.Encode.bool),
-                  ("manual_retry_allowed", intent.manualRetryAllowed->JSON.Encode.bool),
+                  ("nextActionType", nextActionType->JSON.Encode.string),
                 ]
                 ->Dict.fromArray
                 ->JSON.Encode.object
