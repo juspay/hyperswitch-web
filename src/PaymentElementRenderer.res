@@ -37,7 +37,7 @@ let make = (
   }
 
   React.useEffect(() => {
-    if isLoading && logger !== LoggerUtils.defaultLoggerConfig {
+    if isLoading {
       LoggerUtils.logElementLoading(
         ~logger,
         ~shimmerRendered=showLoader,
