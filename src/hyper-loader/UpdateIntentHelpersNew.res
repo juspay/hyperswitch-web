@@ -197,6 +197,7 @@ let setupPreMountLoaderPromises = (
   ~selectorString,
   ~currentClientSecret,
   ~currentSdkAuthorization,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   let preMountLoaderIframeDiv = mountPreMountLoaderIframe(
     ~publishableKey,
@@ -237,6 +238,7 @@ let setupPreMountLoaderPromises = (
         isFromPreMountLoader(ev) && dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome
       ) {
         unMountPreMountLoaderIframe(selectorString)
+        logger.setLogInfo(~value="", ~eventName=PRE_MOUNT_LOADER_CLEANUP)
       }
     }
     addSmartEventListener("message", preMountLoaderIframeCallback, "onPreMountLoaderIframeCallback")
@@ -349,6 +351,7 @@ let performUpdateIntent = async (
         ~selectorString,
         ~currentClientSecret=clientSecretRef.contents,
         ~currentSdkAuthorization=newSdkAuthorization,
+        ~logger,
       )
 
       // Wait for ALL API responses before updating anything.

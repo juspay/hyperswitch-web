@@ -282,6 +282,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     )
   })
 
+  React.useEffect0(() => {
+    let userEvents = ["pointerdown", "keydown", "touchstart"]
+    let hasLogged = ref(false)
+    let onInteract = (ev: {"type": string}) =>
+      if !hasLogged.contents {
+        hasLogged := true
+        LoggerUtils.logUserInteracted(~logger, ~event=ev["type"])
+      }
+    userEvents->Array.forEach(event => Window.addEventListener(event, onInteract))
+
+    Some(() => userEvents->Array.forEach(event => Window.removeEventListener(event, onInteract)))
+  })
+
   React.useEffect(() => {
     CardUtils.generateFontsLink(config.fonts)
     let dict = config.appearance.rules->getDictFromJson
@@ -765,8 +778,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let isReady = SubscriptionEventHooks.useIsReadyEmitted()
   let lastSentHeightRef = React.useRef(None)
   let hasSentReadyResizeRef = React.useRef(false)
-  let elementType =
-    paymentMode->CardThemeType.getPaymentMode->CardThemeType.getPaymentModeToString
+  let elementType = paymentMode->CardThemeType.getPaymentMode->CardThemeType.getPaymentModeToString
   React.useEffect(() => {
     let isFirstAfterReady = isReady && !hasSentReadyResizeRef.current
     let hasChanged = lastSentHeightRef.current != Some(iframeHeight)

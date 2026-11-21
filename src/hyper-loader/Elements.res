@@ -125,6 +125,7 @@ let make = (
       ~selectorString=localSelectorString,
       ~currentClientSecret=clientSecretRef.contents,
       ~currentSdkAuthorization=sdkAuthorizationRef.contents,
+      ~logger,
     )
 
     // Extract isTaxCalculationEnabled from the clientList response

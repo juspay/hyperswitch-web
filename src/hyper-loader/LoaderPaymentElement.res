@@ -450,6 +450,18 @@ let make = (
     let mount = selector => {
       ensureWalletOneClickListener(logger, ~ownerId=elementInstanceId, ~isTrustedMessage)
       mountId := selector
+
+      let eventName: HyperLoggerTypes.eventName = ELEMENT_MOUNT_CALLED
+      logger.setLogInfo(
+        ~value=[
+          ("componentType", componentType->JSON.Encode.string),
+          ("surfaceFamily", surfaceFamily->Option.getOr("element")->JSON.Encode.string),
+        ]
+        ->Dict.fromArray
+        ->JSON.Encode.object
+        ->JSON.stringify,
+        ~eventName,
+      )
       let localSelectorArr = selector->String.split("#")
       let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
       localSelectorRef := localSelectorString
@@ -721,6 +733,19 @@ let make = (
             ->Window.style
             ->Window.setTransition(
               animateResize ? "height 0.35s ease 0s, opacity 0.4s ease 0.1s" : "none",
+            )
+
+            let eventName: HyperLoggerTypes.eventName = ELEMENT_MOUNTED
+            logger.setLogInfo(
+              ~value=[
+                ("componentType", componentType->JSON.Encode.string),
+                ("surfaceFamily", surfaceFamily->Option.getOr("element")->JSON.Encode.string),
+                ("iframeId", iframeElementId->JSON.Encode.string),
+              ]
+              ->Dict.fromArray
+              ->JSON.Encode.object
+              ->JSON.stringify,
+              ~eventName,
             )
           | None => ()
           }

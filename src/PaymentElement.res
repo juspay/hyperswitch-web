@@ -685,10 +685,44 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   // Lets options and selection derived in effects settle before emitting.
   let readySettleDelayMs = 50
+  let hasLoggedElementRendered = React.useRef(false)
   React.useEffect(() => {
     let timeoutId = if isElementReady {
       Some(
         setTimeout(() => {
+          if !hasLoggedElementRendered.current {
+            hasLoggedElementRendered.current = true
+            let eventName: HyperLoggerTypes.eventName = ELEMENT_RENDERED
+            loggerState.setLogInfo(
+              ~value=[
+                (
+                  "componentType",
+                  CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string,
+                ),
+                ("payment_methods", paymentOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
+                (
+                  "saved_methods",
+                  savedMethods
+                  ->Array.map(savedMethod =>
+                    savedMethod.paymentMethodType
+                    ->Option.getOr(savedMethod.paymentMethod)
+                    ->JSON.Encode.string
+                  )
+                  ->JSON.Encode.array,
+                ),
+                ("wallets", walletOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
+                (
+                  "screen",
+                  (isSavedMethodsScreenShown ? "saved_methods" : "payment_methods")
+                  ->JSON.Encode.string,
+                ),
+              ]
+              ->Dict.fromArray
+              ->JSON.Encode.object
+              ->JSON.stringify,
+              ~eventName,
+            )
+          }
           SubscriptionEventHooks.emitReadyOnce(
             ~iframeId,
             ~elementType=CardThemeType.getPaymentModeToString(paymentType),

@@ -207,7 +207,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
 
   let sendLogsOverNetwork = async () => {
     try {
-      await sendCachedLogsFromIDB()
+      sendCachedLogsFromIDB()->ignore
       beaconApiCall(mainLogFile)
       clearLogFile(mainLogFile)
     } catch {
@@ -261,6 +261,16 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       DDC_FLOW,
       GOOGLE_PAY_SCRIPT,
       GOOGLE_PAY_FLOW,
+      HYPERLOADER_SCRIPT_LOADED,
+      ELEMENT_MOUNT_CALLED,
+      ELEMENT_MOUNTED,
+      PRE_MOUNT_LOADER_CLEANUP,
+      PRE_MOUNT_LOADER_INIT,
+      ELEMENT_LOADING,
+      ELEMENT_RENDERED,
+      USER_INTERACTED,
+      PAYMENT_CONFIRM_TRIGGERED,
+      CONFIRM_NEXT_ACTION,
     ]
     arrayOfLogs
     ->Array.find(log => {

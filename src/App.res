@@ -10,8 +10,17 @@ let make = () => {
   let paymentType = paymentMode->CardThemeType.getPaymentMode
 
   let networkStatus = NetworkInformation.useNetworkInformation()
+  let sdkSessionIdFromUrl = getQueryParamsDictforKey(url.search, "sessionId")
+  let publishableKeyFromUrl = getQueryParamsDictforKey(url.search, "publishableKey")
   let (logger, initTimestamp) = React.useMemo0(() => {
-    (HyperLogger.make(~source=Elements(paymentType)), Date.now())
+    (
+      HyperLogger.make(
+        ~source=Elements(paymentType),
+        ~sessionId=sdkSessionIdFromUrl,
+        ~merchantId=publishableKeyFromUrl,
+      ),
+      Date.now(),
+    )
   })
 
   React.useEffect1(() => {
@@ -129,8 +138,6 @@ let make = () => {
     | "preMountLoader" => {
         let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
-        let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
-        let publishableKey = getQueryParamsDictforKey(url.search, "publishableKey")
         let endpoint = getQueryParamsDictforKey(url.search, "endpoint")
         let pmSessionId = getQueryParamsDictforKey(url.search, "pmSessionId")
         let hyperComponentName =
@@ -145,8 +152,8 @@ let make = () => {
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
         <PreMountLoader
-          publishableKey
-          sessionId
+          publishableKey=publishableKeyFromUrl
+          sessionId=sdkSessionIdFromUrl
           sdkAuthorization
           clientSecret
           endpoint
