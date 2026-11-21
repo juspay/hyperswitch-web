@@ -1738,7 +1738,10 @@ let getSessionId = () =>
   switch sessionIdRef.contents {
   | Some(id) => id
   | None =>
-    let id = "hyp_" ++ generateRandomString(8)
+    let uuid = try Window.randomUUID() catch {
+    | _ => generateRandomString(32)
+    }
+    let id = "hyp_" ++ uuid
     sessionIdRef := Some(id)
     id
   }

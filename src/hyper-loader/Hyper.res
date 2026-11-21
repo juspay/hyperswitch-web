@@ -160,9 +160,10 @@ addSmartEventListener(
   "onHyperApplePayMount",
 )
 
-HyperLogger.sendSingleLog(
+let logger = HyperLogger.make(~sessionId=getSessionId(), ~source=Loader)
+
+logger.setLogInfo(
   ~eventName=HYPERLOADER_SCRIPT_LOADED,
-  ~sessionId=getSessionId(),
   ~value=[("origin", Window.Location.origin->JSON.Encode.string)]
   ->Dict.fromArray
   ->JSON.Encode.object
@@ -228,12 +229,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
     let sessionID = analyticsInfoDict->getString("sessionID", getSessionId())
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
-    let logger = HyperLogger.make(
-      ~sessionId=sessionID,
-      ~source=Loader,
-      ~merchantId=publishableKey,
-      ~metadata=analyticsMetadata,
-    )
+    logger.setSessionId(sessionID)
+    logger.setMerchantId(publishableKey)
+    logger.setMetadata(analyticsMetadata)
 
     switch options {
     | Some(userOptions) =>
@@ -249,8 +247,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
     {
       () => {
-        logger.setMerchantId(publishableKey)
-        logger.setSessionId(sessionID)
         logger.setLogInfo(
           ~value=Window.hrefWithoutSearch,
           ~eventName=APP_INITIATED,

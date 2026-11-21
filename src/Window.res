@@ -77,6 +77,7 @@ external elementQuerySelector: (elementRef, string) => Nullable.t<element> = "qu
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
 @val @scope("window") external btoa: string => string = "btoa"
 @val @scope("window") external atob: string => string = "atob"
+@val @scope("crypto") external randomUUID: unit => string = "randomUUID"
 @new external date: date = "Date"
 @get external value: Dom.element => 'a = "value"
 

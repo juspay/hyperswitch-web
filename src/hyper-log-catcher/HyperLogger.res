@@ -63,41 +63,6 @@ let getSourceString = source => {
   }
 }
 
-let sendSingleLog = (
-  ~eventName,
-  ~sessionId,
-  ~value="",
-  ~source: source=Loader,
-  ~logType=INFO,
-  ~logCategory=USER_EVENT,
-  ~merchantId="",
-) =>
-  if GlobalVars.enableLogging && GlobalVars.loggingLevelStr !== "SILENT" {
-    let log: logFile = {
-      logType,
-      timestamp: Date.now()->Float.toString,
-      sessionId,
-      source: source->getSourceString,
-      version: GlobalVars.repoVersion,
-      value,
-      category: logCategory,
-      paymentId: "",
-      merchantId,
-      browserName: Utils.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-      browserVersion: Utils.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
-      platform: Window.Navigator.platform,
-      userAgent: Window.Navigator.userAgent,
-      appId: "",
-      eventName,
-      latency: "",
-      paymentMethod: "",
-      firstEvent: true,
-      metadata: JSON.Encode.null,
-    }
-    let logData = [log]->Array.map(logFileToObj)->JSON.Encode.array->JSON.stringify
-    Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
-  }
-
 let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~metadata=?) => {
   let loggingLevel = switch GlobalVars.loggingLevelStr {
   | "DEBUG" => DEBUG
