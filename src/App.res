@@ -138,8 +138,6 @@ let make = () => {
     | "preMountLoader" => {
         let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
-        let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
-        let publishableKey = getQueryParamsDictforKey(url.search, "publishableKey")
         let endpoint = getQueryParamsDictforKey(url.search, "endpoint")
         let pmSessionId = getQueryParamsDictforKey(url.search, "pmSessionId")
         let hyperComponentName =
@@ -154,8 +152,8 @@ let make = () => {
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
         <PreMountLoader
-          publishableKey
-          sessionId
+          publishableKey=publishableKeyFromUrl
+          sessionId=sdkSessionIdFromUrl
           sdkAuthorization
           clientSecret
           endpoint

@@ -226,10 +226,10 @@ let make = (
     ~clientSecret,
   )
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     logger.setLogInfo(~value="", ~eventName=PRE_MOUNT_LOADER_INIT)
     None
-  })
+  }, [])
 
   switch hyperComponentName {
   | Elements =>

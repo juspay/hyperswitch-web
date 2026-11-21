@@ -692,9 +692,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         setTimeout(() => {
           if !hasLoggedElementRendered.current {
             hasLoggedElementRendered.current = true
-            let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_RENDERED
+            let eventName: HyperLoggerTypes.eventName = ELEMENT_RENDERED
             loggerState.setLogInfo(
               ~value=[
+                (
+                  "componentType",
+                  CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string,
+                ),
                 ("payment_methods", paymentOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
                 (
                   "saved_methods",

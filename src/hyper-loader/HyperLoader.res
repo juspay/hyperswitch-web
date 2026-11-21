@@ -40,18 +40,6 @@ let removeBeforeUnloadEventListeners: array<'ev => unit> => unit = handlers => {
   Window.addEventListener("message", iframeMessageHandler)
 }
 
-HyperLogger.sendSingleLog(
-  ~eventName=HYPERLOADER_SCRIPT_LOADED,
-  ~sessionId=SdkLoadSession.sessionId,
-  ~value=[
-    ("type", "HyperLoader"->JSON.Encode.string),
-    ("version", GlobalVars.repoVersion->JSON.Encode.string),
-  ]
-  ->Dict.fromArray
-  ->JSON.Encode.object
-  ->JSON.stringify,
-)
-
 Types.window["Hyper"] = Hyper.make
 Types.window["Hyper"]["init"] = Hyper.make
 Types.window["removeBeforeUnloadEventListeners"] = removeBeforeUnloadEventListeners

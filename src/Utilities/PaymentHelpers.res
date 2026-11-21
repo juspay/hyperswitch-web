@@ -559,10 +559,6 @@ let rec intentCall = (
             | _ => intent.payment_method_type
             }
 
-            /* CONFIRM_CALL only says a 2xx came back; this says what it asked of
-               the shopper. Logged before the branch chain acts on it, so it is
-               already beaconed when a redirect follows. Confirm only: a polling
-               retrieve would repeat it. */
             if isConfirm {
               let nextActionType = intent.nextAction.type_
               handleLogging(

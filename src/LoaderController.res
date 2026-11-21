@@ -43,8 +43,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let fieldName = CardUtils.getQueryParamsDictforKey(url.search, "fieldName")
 
   let divRef = React.useRef(Nullable.null)
-  // Read by the click listener, which is registered before isReady exists.
-  let isReadyRef = React.useRef(false)
 
   let {config} = configAtom
   let {iframeId} = keys
@@ -272,10 +270,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         ~latency=finalLoadLatency,
       )
     }
-    Window.addEventListener("click", ev => {
-      LoggerUtils.logUserInteracted(~logger, ~kind="click", ~isReady=isReadyRef.current)
+    Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
-    })
+    )
     Some(
       () => {
         Window.removeEventListener("click", ev =>
@@ -283,6 +280,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         )
       },
     )
+  })
+
+  React.useEffect0(() => {
+    let kinds = ["pointerdown", "keydown", "touchstart"]
+    let hasLogged = ref(false)
+    let onInteract = (ev: {"type": string}) =>
+      if !hasLogged.contents {
+        hasLogged := true
+        LoggerUtils.logUserInteracted(~logger, ~event=ev["type"])
+      }
+    kinds->Array.forEach(kind => Window.addEventListener(kind, onInteract))
+
+    Some(() => kinds->Array.forEach(kind => Window.removeEventListener(kind, onInteract)))
   })
 
   React.useEffect(() => {
@@ -766,7 +776,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   // A hidden container measures 0, so 0 is never sent.
   let resizeSettleDelayMs = 100
   let isReady = SubscriptionEventHooks.useIsReadyEmitted()
-  isReadyRef.current = isReady
   let lastSentHeightRef = React.useRef(None)
   let hasSentReadyResizeRef = React.useRef(false)
   let elementType =

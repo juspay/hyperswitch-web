@@ -94,10 +94,8 @@ let sendSingleLog = (
       firstEvent: true,
       metadata: JSON.Encode.null,
     }
-    Window.Navigator.sendBeacon(
-      GlobalVars.logEndpoint,
-      [log]->Array.map(logFileToObj)->JSON.Encode.array->JSON.stringify,
-    )
+    let logData = [log]->Array.map(logFileToObj)->JSON.Encode.array->JSON.stringify
+    Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
   }
 
 let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~metadata=?) => {
@@ -299,12 +297,12 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       GOOGLE_PAY_SCRIPT,
       GOOGLE_PAY_FLOW,
       HYPERLOADER_SCRIPT_LOADED,
-      PAYMENT_ELEMENT_MOUNT_CALLED,
-      PAYMENT_ELEMENT_MOUNTED,
+      ELEMENT_MOUNT_CALLED,
+      ELEMENT_MOUNTED,
       PRE_MOUNT_LOADER_CLEANUP,
       PRE_MOUNT_LOADER_INIT,
-      PAYMENT_ELEMENT_LOADING,
-      PAYMENT_ELEMENT_RENDERED,
+      ELEMENT_LOADING,
+      ELEMENT_RENDERED,
       USER_INTERACTED,
       PAYMENT_CONFIRM_TRIGGERED,
       CONFIRM_NEXT_ACTION,

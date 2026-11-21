@@ -1732,6 +1732,17 @@ let generateRandomString = length => {
   result.contents
 }
 
+let sessionIdRef = ref(None)
+
+let getSessionId = () =>
+  switch sessionIdRef.contents {
+  | Some(id) => id
+  | None =>
+    let id = "hyp_" ++ generateRandomString(8)
+    sessionIdRef := Some(id)
+    id
+  }
+
 let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   switch paymentType {
   | GooglePayElement => wallets->Array.filter(item => item === "google_pay")

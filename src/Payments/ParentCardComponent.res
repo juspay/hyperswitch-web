@@ -508,8 +508,6 @@ let make = (
         ~confirmPayment=_json => Promise.resolve(JSON.Encode.null),
         ~animateResize=false,
         ~surfaceFamily="vault",
-        ~sdkSessionId,
-        ~publishableKey,
       )
       element.mount(`#${containerId}`)
       Some(

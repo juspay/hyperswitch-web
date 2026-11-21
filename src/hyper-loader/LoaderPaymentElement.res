@@ -134,8 +134,6 @@ let make = (
   ~fieldName: option<string>=?,
   ~surfaceFamily: option<string>=?,
   ~groupId: option<string>=?,
-  ~sdkSessionId: string="",
-  ~publishableKey: string="",
 ) => {
   try {
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
@@ -172,9 +170,6 @@ let make = (
 
     // Unique per-instance ID to scope event listener names and prevent collisions.
     let elementInstanceId = generateRandomString(8)
-
-    let hasLoggedMountCalled = ref(false)
-    let hasLoggedIframeMounted = ref(false)
 
     let setPaymentIframeRef = ref => {
       mountedIframeRef := ref
@@ -456,20 +451,17 @@ let make = (
       ensureWalletOneClickListener(logger, ~ownerId=elementInstanceId, ~isTrustedMessage)
       mountId := selector
 
-      if !hasLoggedMountCalled.contents && componentType !== "paymentMethodsSDK" {
-        hasLoggedMountCalled := true
-        let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_MOUNT_CALLED
-        logger.setLogInfo(
-          ~value=[
-            ("componentType", componentType->JSON.Encode.string),
-            ("surfaceFamily", surfaceFamily->Option.getOr("element")->JSON.Encode.string),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
-          ->JSON.stringify,
-          ~eventName,
-        )
-      }
+      let eventName: HyperLoggerTypes.eventName = ELEMENT_MOUNT_CALLED
+      logger.setLogInfo(
+        ~value=[
+          ("componentType", componentType->JSON.Encode.string),
+          ("surfaceFamily", surfaceFamily->Option.getOr("element")->JSON.Encode.string),
+        ]
+        ->Dict.fromArray
+        ->JSON.Encode.object
+        ->JSON.stringify,
+        ~eventName,
+      )
       let localSelectorArr = selector->String.split("#")
       let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
       localSelectorRef := localSelectorString
@@ -722,8 +714,6 @@ let make = (
             ->appendParam("fieldName", fieldName)
             ->appendParam("surfaceFamily", surfaceFamily)
             ->appendParam("groupId", groupId)
-            ->appendParam("sessionId", Some(sdkSessionId)->Utils.getNonEmptyOption)
-            ->appendParam("publishableKey", Some(publishableKey)->Utils.getNonEmptyOption)
           let iframeDiv = `<div id="orca-${elementIframeWrapperDivId}-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
           ${buildIframeHtmlString(
@@ -745,21 +735,18 @@ let make = (
               animateResize ? "height 0.35s ease 0s, opacity 0.4s ease 0.1s" : "none",
             )
 
-            if !hasLoggedIframeMounted.contents && componentType !== "paymentMethodsSDK" {
-              hasLoggedIframeMounted := true
-              let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_MOUNTED
-              logger.setLogInfo(
-                ~value=[
-                  ("componentType", componentType->JSON.Encode.string),
-                  ("surfaceFamily", surfaceFamily->Option.getOr("element")->JSON.Encode.string),
-                  ("iframeId", iframeElementId->JSON.Encode.string),
-                ]
-                ->Dict.fromArray
-                ->JSON.Encode.object
-                ->JSON.stringify,
-                ~eventName,
-              )
-            }
+            let eventName: HyperLoggerTypes.eventName = ELEMENT_MOUNTED
+            logger.setLogInfo(
+              ~value=[
+                ("componentType", componentType->JSON.Encode.string),
+                ("surfaceFamily", surfaceFamily->Option.getOr("element")->JSON.Encode.string),
+                ("iframeId", iframeElementId->JSON.Encode.string),
+              ]
+              ->Dict.fromArray
+              ->JSON.Encode.object
+              ->JSON.stringify,
+              ~eventName,
+            )
           | None => ()
           }
         }

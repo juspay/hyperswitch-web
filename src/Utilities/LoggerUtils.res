@@ -48,50 +48,32 @@ let logApi = (
   }
 }
 
-/* The checkpoint asks whether the element was usable, so readiness is in the row:
-   beforeReady means the click landed before ready was emitted — a shimmer, or
-   partly loaded sections under progressive loading. One row per readiness state,
-   so a pre-ready click cannot consume the checkpoint — funnel queries read
-   beforeReady = false. */
-let hasLoggedInteractionWhenReady = ref(false)
-let hasLoggedInteractionBeforeReady = ref(false)
-
-let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~kind, ~field="", ~isReady=true) => {
-  let alreadyLogged = isReady ? hasLoggedInteractionWhenReady : hasLoggedInteractionBeforeReady
-  if !alreadyLogged.contents {
-    alreadyLogged := true
-    let eventName: HyperLoggerTypes.eventName = USER_INTERACTED
-    logger.setLogInfo(
-      ~value=[
-        ("kind", kind->JSON.Encode.string),
-        ("field", field->JSON.Encode.string),
-        ("beforeReady", !isReady->JSON.Encode.bool),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object
-      ->JSON.stringify,
-      ~eventName,
-    )
-  }
+let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~event) => {
+  let eventName: HyperLoggerTypes.eventName = USER_INTERACTED
+  logger.setLogInfo(
+    ~value=[("event", event->JSON.Encode.string)]
+    ->Dict.fromArray
+    ->JSON.Encode.object
+    ->JSON.stringify,
+    ~eventName,
+  )
 }
 
-let hasLoggedElementLoading = ref(false)
-
-let logElementLoading = (~logger: HyperLoggerTypes.loggerMake, ~shimmerRendered) =>
-  if !hasLoggedElementLoading.contents {
-    hasLoggedElementLoading := true
-    let eventName: HyperLoggerTypes.eventName = PAYMENT_ELEMENT_LOADING
-    logger.setLogInfo(
-      ~value=[("shimmerRendered", shimmerRendered->JSON.Encode.bool)]
-      ->Dict.fromArray
-      ->JSON.Encode.object
-      ->JSON.stringify,
-      ~eventName,
-    )
-  }
+let logElementLoading = (~logger: HyperLoggerTypes.loggerMake, ~shimmerRendered, ~componentType) => {
+  let eventName: HyperLoggerTypes.eventName = ELEMENT_LOADING
+  logger.setLogInfo(
+    ~value=[
+      ("componentType", componentType->JSON.Encode.string),
+      ("shimmerRendered", shimmerRendered->JSON.Encode.bool),
+    ]
+    ->Dict.fromArray
+    ->JSON.Encode.object
+    ->JSON.stringify,
+    ~eventName,
+  )
+}
 
 let logInputChangeInfo = (text, logger: HyperLoggerTypes.loggerMake) => {
-  logUserInteracted(~logger, ~kind="input", ~field=text)
   logger.setLogInfo(~value=text, ~eventName=INPUT_FIELD_CHANGED)
 }
 
@@ -119,15 +101,6 @@ let logConfirmTriggered = (
     ->JSON.stringify,
     ~eventName,
     ~paymentMethod=paymentMethodType,
-  )
-}
-
-let logDataFilled = (~logger: HyperLoggerTypes.loggerMake, ~paymentMethod, ~savedMethod=false) => {
-  let eventName: HyperLoggerTypes.eventName = PAYMENT_DATA_FILLED
-  logger.setLogInfo(
-    ~value=`Payment Data Filled: ${savedMethod ? "Saved Payment Method" : "New Payment Method"}`,
-    ~eventName,
-    ~paymentMethod,
   )
 }
 
@@ -652,12 +625,12 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | DYNAMIC_FIELDS_RENDERED
   | DYNAMIC_FIELDS_CONFIG
   | HYPERLOADER_SCRIPT_LOADED
-  | PAYMENT_ELEMENT_MOUNT_CALLED
-  | PAYMENT_ELEMENT_MOUNTED
+  | ELEMENT_MOUNT_CALLED
+  | ELEMENT_MOUNTED
   | PRE_MOUNT_LOADER_INIT
   | PRE_MOUNT_LOADER_CLEANUP
-  | PAYMENT_ELEMENT_LOADING
-  | PAYMENT_ELEMENT_RENDERED
+  | ELEMENT_LOADING
+  | ELEMENT_RENDERED
   | USER_INTERACTED
   | PAYMENT_CONFIRM_TRIGGERED
   | CONFIRM_NEXT_ACTION

@@ -38,7 +38,11 @@ let make = (
 
   React.useEffect(() => {
     if isLoading && logger !== LoggerUtils.defaultLoggerConfig {
-      LoggerUtils.logElementLoading(~logger, ~shimmerRendered=showLoader)
+      LoggerUtils.logElementLoading(
+        ~logger,
+        ~shimmerRendered=showLoader,
+        ~componentType=CardThemeType.getPaymentModeToString(paymentType),
+      )
     }
     None
   }, (isLoading, showLoader, logger))

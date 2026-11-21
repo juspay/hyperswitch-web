@@ -1774,8 +1774,6 @@ let make = (
         ~eventListenerTracker,
         ~isTrustedPaymentMessage,
         ~onFullscreenCreated,
-        ~sdkSessionId,
-        ~publishableKey,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
