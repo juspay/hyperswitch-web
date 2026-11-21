@@ -51,24 +51,22 @@ let logApi = (
 let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~event) => {
   let eventName: HyperLoggerTypes.eventName = USER_INTERACTED
   logger.setLogInfo(
-    ~value=[("event", event->JSON.Encode.string)]
-    ->Dict.fromArray
-    ->JSON.Encode.object
-    ->JSON.stringify,
+    ~value=[("event", event->JSON.Encode.string)]->CommonUtils.getJsonStringFromArrayOfJson,
     ~eventName,
   )
 }
 
-let logElementLoading = (~logger: HyperLoggerTypes.loggerMake, ~shimmerRendered, ~componentType) => {
+let logElementLoading = (
+  ~logger: HyperLoggerTypes.loggerMake,
+  ~shimmerRendered,
+  ~componentType,
+) => {
   let eventName: HyperLoggerTypes.eventName = ELEMENT_LOADING
   logger.setLogInfo(
     ~value=[
       ("componentType", componentType->JSON.Encode.string),
       ("shimmerRendered", shimmerRendered->JSON.Encode.bool),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object
-    ->JSON.stringify,
+    ]->CommonUtils.getJsonStringFromArrayOfJson,
     ~eventName,
   )
 }
@@ -95,10 +93,7 @@ let logConfirmTriggered = (
     ~value=[
       ("source", source->confirmTriggerSourceToString->JSON.Encode.string),
       ("paymentMethodType", paymentMethodType->JSON.Encode.string),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object
-    ->JSON.stringify,
+    ]->CommonUtils.getJsonStringFromArrayOfJson,
     ~eventName,
     ~paymentMethod=paymentMethodType,
   )
@@ -139,10 +134,7 @@ let makeEventListenerLogger = (~logger: HyperLoggerTypes.loggerMake, ~componentT
       [
         ("componentType", componentType->JSON.Encode.string),
         ("eventListeners", eventListeners->Array.map(JSON.Encode.string)->JSON.Encode.array),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object
-      ->JSON.stringify
+      ]->CommonUtils.getJsonStringFromArrayOfJson
     logger.setLogInfo(~value, ~eventName=PAYMENT_ELEMENT_EVENT_LISTENERS, ~logType=INFO)
   }
 
