@@ -56,16 +56,11 @@ let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~event) => {
   )
 }
 
-let logElementLoading = (
-  ~logger: HyperLoggerTypes.loggerMake,
-  ~shimmerRendered,
-  ~componentType,
-) => {
+let logElementLoading = (~logger: HyperLoggerTypes.loggerMake, ~componentType) => {
   let eventName: HyperLoggerTypes.eventName = ELEMENT_LOADING
   logger.setLogInfo(
     ~value=[
       ("componentType", componentType->JSON.Encode.string),
-      ("shimmerRendered", shimmerRendered->JSON.Encode.bool),
     ]->CommonUtils.getJsonStringFromArrayOfJson,
     ~eventName,
   )

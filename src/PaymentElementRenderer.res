@@ -40,12 +40,11 @@ let make = (
     if isLoading {
       LoggerUtils.logElementLoading(
         ~logger,
-        ~shimmerRendered=showLoader,
         ~componentType=CardThemeType.getPaymentModeToString(paymentType),
       )
     }
     None
-  }, (isLoading, showLoader, logger))
+  }, (isLoading, logger))
 
   let isWalletElement = paymentType->Utils.checkIsWalletElement
 
