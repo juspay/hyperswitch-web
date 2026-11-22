@@ -268,6 +268,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       PRE_MOUNT_LOADER_INIT,
       ELEMENT_LOADING,
       ELEMENT_RENDERED,
+      PAYMENT_METHODS_RENDERED,
       USER_INTERACTED,
       PAYMENT_CONFIRM_TRIGGERED,
       CONFIRM_NEXT_ACTION,

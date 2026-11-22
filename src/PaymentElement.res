@@ -699,27 +699,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
                   "componentType",
                   CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string,
                 ),
-                ("payment_methods", paymentOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
-                (
-                  "saved_methods",
-                  savedMethods
-                  ->Array.map(savedMethod =>
-                    savedMethod.paymentMethodType
-                    ->Option.getOr(savedMethod.paymentMethod)
-                    ->JSON.Encode.string
-                  )
-                  ->JSON.Encode.array,
-                ),
-                ("wallets", walletOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
-                (
-                  "screen",
-                  (isSavedMethodsScreenShown ? "saved_methods" : "payment_methods")
-                  ->JSON.Encode.string,
-                ),
               ]
-              ->Dict.fromArray
-              ->JSON.Encode.object
-              ->JSON.stringify,
+              ->CommonUtils.getJsonStringFromArrayOfJson,
               ~eventName,
             )
           }
@@ -737,6 +718,50 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   // Only the first screen is held back; later screens render as they load.
   let isReadyEmitted = SubscriptionEventHooks.useIsReadyEmitted()
+
+  // Log the SDK's method lists initially and when they change, independently of ready.
+  let isUpdatingIntent = Jotai.useAtomValue(JotaiAtoms.isUpdateIntentLoading)
+  let lastLoggedMethods = React.useRef(None)
+  React.useEffect(() => {
+    if isReadyEmitted && !isUpdatingIntent {
+      let methodsLog =
+        [
+          ("componentType", CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string),
+          ("payment_methods", paymentOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
+          (
+            "saved_methods",
+            savedMethods
+            ->Array.map(savedMethod =>
+              savedMethod.paymentMethodType
+              ->Option.getOr(savedMethod.paymentMethod)
+              ->JSON.Encode.string
+            )
+            ->JSON.Encode.array,
+          ),
+          ("wallets", walletOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
+          (
+            "screen",
+            (isSavedMethodsScreenShown ? "saved_methods" : "payment_methods")->JSON.Encode.string,
+          ),
+        ]
+        ->CommonUtils.getJsonStringFromArrayOfJson
+      if lastLoggedMethods.current !== Some(methodsLog) {
+        lastLoggedMethods.current = Some(methodsLog)
+        loggerState.setLogInfo(~eventName=PAYMENT_METHODS_RENDERED, ~value=methodsLog)
+      }
+    }
+    None
+  }, (
+    isReadyEmitted,
+    isUpdatingIntent,
+    paymentType,
+    paymentOptions,
+    savedMethods,
+    walletOptions,
+    isSavedMethodsScreenShown,
+    loggerState,
+  ))
+
   let isContentGated = !optionAtomValue.enableProgressiveLoading && !isReadyEmitted
   // Wallet SDK iframes override visibility, so hide with opacity and block interaction with inert.
   // Zero height with clipping keeps the hidden content out of the scrollable area.
