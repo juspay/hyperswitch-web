@@ -10,8 +10,17 @@ let make = () => {
   let paymentType = paymentMode->CardThemeType.getPaymentMode
 
   let networkStatus = NetworkInformation.useNetworkInformation()
+  let sdkSessionIdFromUrl = getQueryParamsDictforKey(url.search, "sessionId")
+  let publishableKeyFromUrl = getQueryParamsDictforKey(url.search, "publishableKey")
   let (logger, initTimestamp) = React.useMemo0(() => {
-    (HyperLogger.make(~source=Elements(paymentType)), Date.now())
+    (
+      HyperLogger.make(
+        ~source=Elements(paymentType),
+        ~sessionId=sdkSessionIdFromUrl,
+        ~merchantId=publishableKeyFromUrl,
+      ),
+      Date.now(),
+    )
   })
 
   React.useEffect1(() => {
@@ -120,17 +129,15 @@ let make = () => {
       <div id="fullscreen">
         <FullScreenDivDriver />
       </div>
-    | "qrData" => <QRCodeDisplay />
+    | "qrData" => <QRCodeDisplay logger />
     | "3dsAuth" => <ThreeDSAuth />
     | "redsys3ds" => <Redsys3ds />
     | "3ds" => <ThreeDSMethod />
-    | "voucherData" => <VoucherDisplay />
-    | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
+    | "voucherData" => <VoucherDisplay logger />
+    | "3dsRedirectionPopup" => <ThreeDSRedirectionModal logger />
     | "preMountLoader" => {
         let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
-        let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
-        let publishableKey = getQueryParamsDictforKey(url.search, "publishableKey")
         let endpoint = getQueryParamsDictforKey(url.search, "endpoint")
         let pmSessionId = getQueryParamsDictforKey(url.search, "pmSessionId")
         let hyperComponentName =
@@ -145,8 +152,8 @@ let make = () => {
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
         <PreMountLoader
-          publishableKey
-          sessionId
+          publishableKey=publishableKeyFromUrl
+          sessionId=sdkSessionIdFromUrl
           sdkAuthorization
           clientSecret
           endpoint

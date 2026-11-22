@@ -1,4 +1,5 @@
 open IndexedDB
+
 let logApi = (
   ~eventName,
   ~statusCode=0,
@@ -47,8 +48,50 @@ let logApi = (
   }
 }
 
+let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~event) => {
+  let eventName: HyperLoggerTypes.eventName = USER_INTERACTED
+  logger.setLogInfo(
+    ~value=[("event", event->JSON.Encode.string)]->CommonUtils.getJsonStringFromArrayOfJson,
+    ~eventName,
+  )
+}
+
+let logElementLoading = (~logger: HyperLoggerTypes.loggerMake, ~componentType) => {
+  let eventName: HyperLoggerTypes.eventName = ELEMENT_LOADING
+  logger.setLogInfo(
+    ~value=[
+      ("componentType", componentType->JSON.Encode.string),
+    ]->CommonUtils.getJsonStringFromArrayOfJson,
+    ~eventName,
+  )
+}
+
 let logInputChangeInfo = (text, logger: HyperLoggerTypes.loggerMake) => {
   logger.setLogInfo(~value=text, ~eventName=INPUT_FIELD_CHANGED)
+}
+
+let confirmTriggerSourceToString = (source: HyperLoggerTypes.confirmTrigger) =>
+  switch source {
+  | SdkButton => "sdk_button"
+  | OneClick => "one_click"
+  | Merchant => "merchant"
+  | Wallet => "wallet"
+  }
+
+let logConfirmTriggered = (
+  ~logger: HyperLoggerTypes.loggerMake,
+  ~source: HyperLoggerTypes.confirmTrigger,
+  ~paymentMethodType="",
+) => {
+  let eventName: HyperLoggerTypes.eventName = PAYMENT_CONFIRM_TRIGGERED
+  logger.setLogInfo(
+    ~value=[
+      ("source", source->confirmTriggerSourceToString->JSON.Encode.string),
+      ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+    ]->CommonUtils.getJsonStringFromArrayOfJson,
+    ~eventName,
+    ~paymentMethod=paymentMethodType,
+  )
 }
 
 let handleLogging = (
@@ -86,10 +129,7 @@ let makeEventListenerLogger = (~logger: HyperLoggerTypes.loggerMake, ~componentT
       [
         ("componentType", componentType->JSON.Encode.string),
         ("eventListeners", eventListeners->Array.map(JSON.Encode.string)->JSON.Encode.array),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object
-      ->JSON.stringify
+      ]->CommonUtils.getJsonStringFromArrayOfJson
     logger.setLogInfo(~value, ~eventName=PAYMENT_ELEMENT_EVENT_LISTENERS, ~logType=INFO)
   }
 
@@ -571,6 +611,17 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | UPDATE_SDK
   | DYNAMIC_FIELDS_RENDERED
   | DYNAMIC_FIELDS_CONFIG
+  | HYPERLOADER_SCRIPT_LOADED
+  | ELEMENT_MOUNT_CALLED
+  | ELEMENT_MOUNTED
+  | PRE_MOUNT_LOADER_INIT
+  | PRE_MOUNT_LOADER_CLEANUP
+  | ELEMENT_LOADING
+  | ELEMENT_RENDERED
+  | PAYMENT_METHODS_RENDERED
+  | USER_INTERACTED
+  | PAYMENT_CONFIRM_TRIGGERED
+  | CONFIRM_NEXT_ACTION
   | CLIENT_LIST_CALL_INIT =>
     None
   }

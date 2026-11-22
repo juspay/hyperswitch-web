@@ -224,7 +224,14 @@ let make = (
     ~source=Loader,
     ~merchantId=publishableKey,
     ~clientSecret,
+    ~sdkAuthorization,
   )
+  logger.setPaymentId(pmSessionId)
+
+  React.useEffect(() => {
+    logger.setLogInfo(~value="", ~eventName=PRE_MOUNT_LOADER_INIT)
+    None
+  }, [])
 
   switch hyperComponentName {
   | Elements =>

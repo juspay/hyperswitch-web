@@ -158,6 +158,9 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   context: async ({ context, mode, hermetic, credentials }, use, testInfo) => {
     // Demo shop /payments/config + /payments/urls, answered by the harness in every project.
     await installDemoShopConfig(context);
+    await context.route(`${SDK_URL}/test-analytics`, (route) =>
+      route.fulfill({ status: 200, body: "" }),
+    );
     if (hermetic.engine) await hermetic.engine.install(context);
 
     const recorder =

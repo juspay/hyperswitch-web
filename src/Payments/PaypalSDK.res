@@ -53,6 +53,16 @@ let make = (~sessionObj: SessionsType.token) => {
   let emitterRef = React.useRef(emitter)
   emitterRef.current = emitter
 
+  // Vendor callbacks outlive renders; use the current read-only setting and logger.
+  let confirmTriggerRef = React.useRef((options.readOnly, loggerState))
+  confirmTriggerRef.current = (options.readOnly, loggerState)
+  let onConfirmTriggered = () => {
+    let (readOnly, logger) = confirmTriggerRef.current
+    if !readOnly {
+      LoggerUtils.logConfirmTriggered(~logger, ~source=Wallet, ~paymentMethodType)
+    }
+  }
+
   let buttonStyle = switch options.wallets.payPal {
   | PaypalConfigObj(cfg) =>
     let (_, _, sharedButtonType, _) = options.wallets.style.type_
@@ -197,6 +207,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~parentOrigin=parentURL,
         ~loggerState,
         ~onButtonSettled,
+        ~onConfirmTriggered,
         ~sdkHandleOneClickConfirmPayment,
         ~buttonStyle,
         ~iframeId,
@@ -238,6 +249,7 @@ let make = (~sessionObj: SessionsType.token) => {
             ~parentOrigin=parentURL,
             ~loggerState,
             ~onButtonSettled,
+            ~onConfirmTriggered,
             ~sdkHandleOneClickConfirmPayment,
             ~token,
             ~buttonStyle,

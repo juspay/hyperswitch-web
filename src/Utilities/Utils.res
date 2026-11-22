@@ -1070,26 +1070,27 @@ let getHeaders = (
 let formatException = exc =>
   switch exc {
   | JsExn(obj) =>
-    let message = JsExn.message(obj)
-    let name = JsExn.name(obj)
-    let stack = JsExn.stack(obj)
-    let fileName = JsExn.fileName(obj)
+    let message = JsExn.message(obj)->Option.getOr("Unknown Error")
+    let name = JsExn.name(obj)->Option.getOr("UnknownError")
+    let stack = JsExn.stack(obj)->Option.getOr("Unknown")
+    let fileName = JsExn.fileName(obj)->Option.getOr("Unknown")
 
-    if (
-      message->Option.isSome ||
-      name->Option.isSome ||
-      stack->Option.isSome ||
-      fileName->Option.isSome
-    ) {
-      [
-        ("message", message->Option.getOr("Unknown Error")->JSON.Encode.string),
-        ("type", name->Option.getOr("Unknown")->JSON.Encode.string),
-        ("stack", stack->Option.getOr("Unknown")->JSON.Encode.string),
-        ("fileName", fileName->Option.getOr("Unknown")->JSON.Encode.string),
-      ]->getJsonFromArrayOfJson
-    } else {
-      exc->Identity.anyTypeToJson
+    let errorArray = switch name {
+    | "ChunkLoadError" => [
+        ("message", message->JSON.Encode.string),
+        ("stack", stack->JSON.Encode.string),
+      ]
+    | "SyntaxError" => [("message", "Response is not valid JSON"->JSON.Encode.string)]
+    | _ => [("message", message->JSON.Encode.string)]
     }
+
+    errorArray->Array.pushMany([
+      ("type", name->JSON.Encode.string),
+      ("fileName", fileName->JSON.Encode.string),
+    ])
+
+    errorArray->getJsonFromArrayOfJson
+
   | _ => exc->Identity.anyTypeToJson
   }
 
@@ -1731,6 +1732,20 @@ let generateRandomString = length => {
   result.contents
 }
 
+let sessionIdRef = ref(None)
+
+let getSessionId = () =>
+  switch sessionIdRef.contents {
+  | Some(id) => id
+  | None =>
+    let uuid = try Window.randomUUID() catch {
+    | _ => generateRandomString(32)
+    }
+    let id = "hyp_" ++ uuid
+    sessionIdRef := Some(id)
+    id
+  }
+
 let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   switch paymentType {
   | GooglePayElement => wallets->Array.filter(item => item === "google_pay")
@@ -2222,5 +2237,21 @@ let getPaymentIdOrExtractFromSdkAuth = (~clientSecret, ~sdkAuthorization) => {
     }
     paymentId->Option.getOr(clientSecret->getPaymentId)
   | None => clientSecret->getPaymentId
+  }
+}
+
+let getMerchantIdOrExtractFromSdkAuth = (~merchantId, ~sdkAuthorization) => {
+  if merchantId !== "" {
+    merchantId
+  } else {
+    switch sdkAuthorization {
+    | Some(sdkAuth) =>
+      try {
+        getSdkAuthorizationData(sdkAuth).publishableKey->Option.getOr("")
+      } catch {
+      | _ => ""
+      }
+    | None => ""
+    }
   }
 }

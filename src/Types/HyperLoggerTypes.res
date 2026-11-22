@@ -2,6 +2,8 @@ type apiLogType = Request | Response | NoResponse | Method | Err
 type logType = DEBUG | INFO | ERROR | WARNING | SILENT
 type logCategory = API | USER_ERROR | USER_EVENT | MERCHANT_EVENT
 
+type confirmTrigger = SdkButton | OneClick | Merchant | Wallet
+
 type eventName =
   | APP_RENDERED
   | PAYMENT_METHOD_CHANGED
@@ -124,6 +126,17 @@ type eventName =
   | DYNAMIC_FIELDS_RENDERED
   | DYNAMIC_FIELDS_CONFIG
   | CARD_FORM_FLOW
+  | HYPERLOADER_SCRIPT_LOADED
+  | ELEMENT_MOUNT_CALLED
+  | ELEMENT_MOUNTED
+  | PRE_MOUNT_LOADER_INIT
+  | PRE_MOUNT_LOADER_CLEANUP
+  | ELEMENT_LOADING
+  | ELEMENT_RENDERED
+  | PAYMENT_METHODS_RENDERED
+  | USER_INTERACTED
+  | PAYMENT_CONFIRM_TRIGGERED
+  | CONFIRM_NEXT_ACTION
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

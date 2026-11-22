@@ -282,6 +282,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     )
   })
 
+  React.useEffect0(() => {
+    let userEvents = ["pointerdown", "keydown", "touchstart"]
+    let hasLogged = ref(false)
+    let onInteract = (ev: {"type": string}) =>
+      if !hasLogged.contents {
+        hasLogged := true
+        LoggerUtils.logUserInteracted(~logger, ~event=ev["type"])
+      }
+    userEvents->Array.forEach(event => Window.addEventListener(event, onInteract))
+
+    Some(() => userEvents->Array.forEach(event => Window.removeEventListener(event, onInteract)))
+  })
+
   React.useEffect(() => {
     CardUtils.generateFontsLink(config.fonts)
     let dict = config.appearance.rules->getDictFromJson
@@ -390,6 +403,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 })
                 logger.setClientSecret(clientSecret)
                 logger.setSdkAuthorization(sdkAuthorization)
+                if pmSessionId !== "" {
+                  logger.setPaymentId(pmSessionId)
+                }
 
                 // Update top redirection atom
                 updateRedirectionFlags(paymentOptions)
@@ -435,6 +451,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
             logger.setClientSecret(clientSecret)
             logger.setSdkAuthorization(sdkAuthorization)
+            if pmSessionId !== "" {
+              logger.setPaymentId(pmSessionId)
+            }
 
             // Update top redirection atom
             updateRedirectionFlags(paymentOptions)
@@ -447,7 +466,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         } else if dict->getDictIsSome("paymentElementsUpdate") {
           updateOptions(dict)
         } else if dict->getDictIsSome("ElementsUpdate") {
-          logger.setLogInfo(~value="SDK Credentials Received from Loader", ~eventName=UPDATE_SDK)
           let optionsDict = dict->getDictFromObj("options")
           setPaymentOptionsJson(prev => {
             let updatedPaymentOptions = prev->getDictFromJson->Dict.copy
@@ -479,6 +497,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let sdkAuthorization = dict->Dict.get("sdkAuthorization")
           switch sdkAuthorization {
           | Some(val) =>
+            logger.setSdkAuthorization(val->getStringFromJson(""))
             setKeys(prev => {
               ...prev,
               sdkAuthorization: Some(val->getStringFromJson("")),
@@ -492,6 +511,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
           | None => ()
           }
+          logger.setLogInfo(~value="SDK Credentials Received from Loader", ~eventName=UPDATE_SDK)
           if optionsDict->Dict.keysToArray->Array.length > 0 {
             optionsDict->loadTheme(res => dict->setConfigs(res))
           }
@@ -765,8 +785,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let isReady = SubscriptionEventHooks.useIsReadyEmitted()
   let lastSentHeightRef = React.useRef(None)
   let hasSentReadyResizeRef = React.useRef(false)
-  let elementType =
-    paymentMode->CardThemeType.getPaymentMode->CardThemeType.getPaymentModeToString
+  let elementType = paymentMode->CardThemeType.getPaymentMode->CardThemeType.getPaymentModeToString
   React.useEffect(() => {
     let isFirstAfterReady = isReady && !hasSentReadyResizeRef.current
     let hasChanged = lastSentHeightRef.current != Some(iframeHeight)

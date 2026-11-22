@@ -85,6 +85,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
       ~merchantId=publishableKey,
       ~metadata=analyticsMetadata,
       ~clientSecret,
+      ~sdkAuthorization,
     )
 
     let callBackFunc = payment => {
@@ -160,6 +161,16 @@ addSmartEventListener(
   "onHyperApplePayMount",
 )
 
+let logger = HyperLogger.make(~sessionId=getSessionId(), ~source=Loader)
+
+logger.setLogInfo(
+  ~eventName=HYPERLOADER_SCRIPT_LOADED,
+  ~value=[("origin", Window.Location.origin->JSON.Encode.string)]
+  ->Dict.fromArray
+  ->JSON.Encode.object
+  ->JSON.stringify,
+)
+
 let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
     let publishableKey = switch keys->JSON.Classify.classify {
@@ -217,14 +228,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     }
     let analyticsInfoDict =
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-    let sessionID = analyticsInfoDict->getString("sessionID", "hyp_" ++ generateRandomString(8))
+    let sessionID = analyticsInfoDict->getString("sessionID", getSessionId())
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
-    let logger = HyperLogger.make(
-      ~sessionId=sessionID,
-      ~source=Loader,
-      ~merchantId=publishableKey,
-      ~metadata=analyticsMetadata,
-    )
+    logger.setSessionId(sessionID)
+    logger.setMerchantId(publishableKey)
+    logger.setMetadata(analyticsMetadata)
 
     switch options {
     | Some(userOptions) =>
@@ -240,8 +248,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
     {
       () => {
-        logger.setMerchantId(publishableKey)
-        logger.setSessionId(sessionID)
         logger.setLogInfo(
           ~value=Window.hrefWithoutSearch,
           ~eventName=APP_INITIATED,
@@ -479,6 +485,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           })
         }
 
+        let confirmTrigger = switch (isSdkButton, isOneClick) {
+        | (true, _) => HyperLoggerTypes.SdkButton
+        | (_, true) => HyperLoggerTypes.OneClick
+        | _ => HyperLoggerTypes.Merchant
+        }
+
+        LoggerUtils.logConfirmTriggered(~logger, ~source=confirmTrigger)
+
         if isTestMode {
           let errorResponse = getFailedSubmitResponse(
             ~errorType="test_mode_bypass",
@@ -676,6 +690,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         sdkAuthorization := sdkAuthorizationId
         let pmSessionIdVal = sdkAuthorizationData.pmSessionId->Option.getOr("")
+        let logger = HyperLogger.make(
+          ~sessionId=sessionID,
+          ~source=Loader,
+          ~merchantId=publishableKey,
+          ~metadata=analyticsMetadata,
+          ~sdkAuthorization=sdkAuthorizationId,
+        )
+        logger.setPaymentId(pmSessionIdVal)
 
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
@@ -961,6 +983,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           paymentMethodSessionLoggerRef := Some(newLogger)
           newLogger
         }
+        sessionLogger.setSdkAuthorization(
+          paymentMethodSessionOptions
+          ->getDictFromJson
+          ->PaymentMethodSession.resolveSdkAuthorization,
+        )
         sessionLogger.setPaymentId(pmSessionIdVal)
         sessionLogger.setLogInfo(
           ~value=[
