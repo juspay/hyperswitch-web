@@ -4,6 +4,7 @@ open TaxCalculation
 
 let loadPaypalSDK = (
   ~loggerState: HyperLoggerTypes.loggerMake,
+  ~onConfirmTriggered,
   ~parentOrigin,
   ~sdkHandleOneClickConfirmPayment as _,
   ~buttonStyle: PaypalSDKTypes.style,
@@ -243,6 +244,7 @@ let loadPaypalSDK = (
       handleCloseLoader()
     },
     onClick: () => {
+      onConfirmTriggered()
       loggerState.setLogInfo(
         ~value="Paypal SDK Button Clicked",
         ~eventName=PAYPAL_SDK_FLOW,
@@ -258,6 +260,7 @@ let loadPaypalSDK = (
 
 let loadBraintreePaypalSdk = (
   ~loggerState: HyperLoggerTypes.loggerMake,
+  ~onConfirmTriggered,
   ~parentOrigin,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
@@ -351,6 +354,7 @@ let loadBraintreePaypalSdk = (
                     handleCloseLoader()
                   },
                   onClick: () => {
+                    onConfirmTriggered()
                     loggerState.setLogInfo(
                       ~value="Paypal Braintree SDK Button Clicked",
                       ~eventName=PAYPAL_SDK_FLOW,

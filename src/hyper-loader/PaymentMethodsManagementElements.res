@@ -124,6 +124,7 @@ let make = (
           isFromPreMountLoader(ev) && dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome
         ) {
           unMountPreMountLoaderIframe()
+          logger.setLogInfo(~value="", ~eventName=PRE_MOUNT_LOADER_CLEANUP)
         }
       }
       addSmartEventListener(

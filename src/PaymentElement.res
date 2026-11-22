@@ -560,17 +560,36 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     optionAtomValue.paymentMethodsHeaderText
   }
 
+  let (isReadyEmitted, setIsReadyEmitted) = React.useState(_ => false)
+  let hasLoggedElementRendered = React.useRef(false)
+
   React.useEffect(() => {
     if groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately {
       setShowPaymentMethodsScreen(_ => true)
     }
+    let emitReadyWithLog = () => {
+      if !hasLoggedElementRendered.current {
+        hasLoggedElementRendered.current = true
+        let eventName: HyperLoggerTypes.eventName = ELEMENT_RENDERED
+        loggerState.setLogInfo(
+          ~value=[
+            (
+              "componentType",
+              CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string,
+            ),
+          ]->CommonUtils.getJsonStringFromArrayOfJson,
+          ~eventName,
+        )
+      }
+      SubscriptionEventHooks.emitReady(
+        ~iframeId,
+        ~elementType=CardThemeType.getPaymentModeToString(paymentType),
+      )
+      setIsReadyEmitted(_ => true)
+    }
     let evalMethodsList = () =>
       switch paymentMethodList {
-      | SemiLoaded | LoadError(_) | Loaded(_) =>
-        SubscriptionEventHooks.emitReady(
-          ~iframeId,
-          ~elementType=CardThemeType.getPaymentModeToString(paymentType),
-        )
+      | SemiLoaded | LoadError(_) | Loaded(_) => emitReadyWithLog()
       | _ => ()
       }
     if !displaySavedPaymentMethods {
@@ -578,13 +597,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     } else {
       switch customerPaymentMethods {
       | LoadingSavedCards => ()
-      | LoadedSavedCards(list, _) =>
-        list->Array.length > 0
-          ? SubscriptionEventHooks.emitReady(
-              ~iframeId,
-              ~elementType=CardThemeType.getPaymentModeToString(paymentType),
-            )
-          : evalMethodsList()
+      | LoadedSavedCards(list, _) => list->Array.length > 0 ? emitReadyWithLog() : evalMethodsList()
       | NoResult(_) => evalMethodsList()
       }
     }
@@ -625,6 +638,49 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     hasPaymentOrWalletOptions &&
     shouldDisplayPaymentMethodsScreen &&
     clickToPayConfig.isReady->Option.isSome
+
+  let isSavedMethodsScreenShown = !shouldShowShimmer && shouldShowSavedMethodsScreen
+
+  // Log the SDK's method lists initially and when they change, independently of ready.
+  let isUpdatingIntent = Jotai.useAtomValue(JotaiAtoms.isUpdateIntentLoading)
+  let lastLoggedMethods = React.useRef(None)
+  React.useEffect(() => {
+    if isReadyEmitted && !isUpdatingIntent {
+      let methodsLog = [
+        ("componentType", CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string),
+        ("payment_methods", paymentOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
+        (
+          "saved_methods",
+          savedMethods
+          ->Array.map(savedMethod =>
+            savedMethod.paymentMethodType
+            ->Option.getOr(savedMethod.paymentMethod)
+            ->JSON.Encode.string
+          )
+          ->JSON.Encode.array,
+        ),
+        ("wallets", walletOptions->Array.map(JSON.Encode.string)->JSON.Encode.array),
+        (
+          "screen",
+          (isSavedMethodsScreenShown ? "saved_methods" : "payment_methods")->JSON.Encode.string,
+        ),
+      ]->CommonUtils.getJsonStringFromArrayOfJson
+      if lastLoggedMethods.current !== Some(methodsLog) {
+        lastLoggedMethods.current = Some(methodsLog)
+        loggerState.setLogInfo(~eventName=PAYMENT_METHODS_RENDERED, ~value=methodsLog)
+      }
+    }
+    None
+  }, (
+    isReadyEmitted,
+    isUpdatingIntent,
+    paymentType,
+    paymentOptions,
+    savedMethods,
+    walletOptions,
+    isSavedMethodsScreenShown,
+    loggerState,
+  ))
 
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>

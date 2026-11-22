@@ -86,6 +86,9 @@ const webServer: PlaywrightTestConfig["webServer"] = process.env
           PORT: String(SDK_PORT),
           // Without this the SDK would load its iframes from localhost:9050.
           ENV_SDK_URL: SDK_URL,
+          // Keep telemetry observable in tests; the context fixture serves this local sink.
+          ENABLE_LOGGING: "true",
+          ENV_LOGGING_URL: `${SDK_URL}/test-analytics`,
           sdkEnv: process.env.SDK_ENV || "local",
         },
         reuseExistingServer,
