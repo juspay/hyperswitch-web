@@ -2239,3 +2239,19 @@ let getPaymentIdOrExtractFromSdkAuth = (~clientSecret, ~sdkAuthorization) => {
   | None => clientSecret->getPaymentId
   }
 }
+
+let getMerchantIdOrExtractFromSdkAuth = (~merchantId, ~sdkAuthorization) => {
+  if merchantId !== "" {
+    merchantId
+  } else {
+    switch sdkAuthorization {
+    | Some(sdkAuth) =>
+      try {
+        getSdkAuthorizationData(sdkAuth).publishableKey->Option.getOr("")
+      } catch {
+      | _ => ""
+      }
+    | None => ""
+    }
+  }
+}

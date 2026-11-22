@@ -85,6 +85,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
       ~merchantId=publishableKey,
       ~metadata=analyticsMetadata,
       ~clientSecret,
+      ~sdkAuthorization,
     )
 
     let callBackFunc = payment => {
@@ -689,6 +690,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         sdkAuthorization := sdkAuthorizationId
         let pmSessionIdVal = sdkAuthorizationData.pmSessionId->Option.getOr("")
+        let logger = HyperLogger.make(
+          ~sessionId=sessionID,
+          ~source=Loader,
+          ~merchantId=publishableKey,
+          ~metadata=analyticsMetadata,
+          ~sdkAuthorization=sdkAuthorizationId,
+        )
+        logger.setPaymentId(pmSessionIdVal)
 
         let pmManagementOptions =
           pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
@@ -974,6 +983,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           paymentMethodSessionLoggerRef := Some(newLogger)
           newLogger
         }
+        sessionLogger.setSdkAuthorization(
+          paymentMethodSessionOptions
+          ->getDictFromJson
+          ->PaymentMethodSession.resolveSdkAuthorization,
+        )
         sessionLogger.setPaymentId(pmSessionIdVal)
         sessionLogger.setLogInfo(
           ~value=[

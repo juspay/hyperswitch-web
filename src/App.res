@@ -129,12 +129,12 @@ let make = () => {
       <div id="fullscreen">
         <FullScreenDivDriver />
       </div>
-    | "qrData" => <QRCodeDisplay />
+    | "qrData" => <QRCodeDisplay logger />
     | "3dsAuth" => <ThreeDSAuth />
     | "redsys3ds" => <Redsys3ds />
     | "3ds" => <ThreeDSMethod />
-    | "voucherData" => <VoucherDisplay />
-    | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
+    | "voucherData" => <VoucherDisplay logger />
+    | "3dsRedirectionPopup" => <ThreeDSRedirectionModal logger />
     | "preMountLoader" => {
         let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")

@@ -662,6 +662,8 @@ let rec intentCall = (
                   ("popupUrl", popupUrl->JSON.Encode.string),
                   ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
                   ("paymentMethodFlowCancel", paymentMethodFlowCancelMetadata),
+                  ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+                  ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                 ]
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
@@ -833,6 +835,8 @@ let rec intentCall = (
                     ("returnUrl", url.href->JSON.Encode.string),
                     ("paymentMethod", paymentMethod->JSON.Encode.string),
                     ("payment_intent_data", data),
+                    ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                   ]->Dict.fromArray
                 handleLogging(
                   ~optLogger,

@@ -1,12 +1,11 @@
 open Utils
 @react.component
-let make = () => {
+let make = (~logger: HyperLoggerTypes.loggerMake) => {
   let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (returnUrl, setReturnUrl) = React.useState(_ => "")
   let (downloadUrl, setDownloadUrl) = React.useState(_ => "")
   let (reference, setReference) = React.useState(_ => "")
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let (downloadCounter, setDownloadCounter) = React.useState(_ => 0)
   let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
   let (paymentIntent, setPaymentIntent) = React.useState(_ => JSON.Encode.null)
@@ -29,6 +28,8 @@ let make = () => {
       if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+        logger.setSdkAuthorization(metaDataDict->getString("sdkAuthorization", ""))
+        logger.setMerchantId(metaDataDict->getString("publishableKey", ""))
         setReturnUrl(_ => metaDataDict->getString("returnUrl", ""))
         setDownloadUrl(_ => metaDataDict->getString("voucherUrl", ""))
         setReference(_ => metaDataDict->getString("reference", ""))

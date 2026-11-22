@@ -380,6 +380,7 @@ let performUpdateIntent = async (
         // All API calls succeeded — now commit state changes
 
         sdkAuthorizationRef.contents = newSdkAuthorization
+        logger.setSdkAuthorization(newSdkAuthorization)
 
         sessionTokensDataPromise.contents = newSessionTokensPromise
         sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
