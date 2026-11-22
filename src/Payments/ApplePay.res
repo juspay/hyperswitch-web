@@ -274,6 +274,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onApplePayButtonClicked = () => {
+    LoggerUtils.logConfirmTriggered(~logger=loggerState, ~source=Wallet, ~paymentMethodType)
     if isTestMode {
       Console.warn("Apple Pay button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(

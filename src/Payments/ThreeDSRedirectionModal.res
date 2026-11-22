@@ -2,7 +2,7 @@ open Utils
 type customEvent = {openurl_if_required: string}
 
 @react.component
-let make = () => {
+let make = (~logger: HyperLoggerTypes.loggerMake) => {
   let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (popupUrl, setPopupUrl) = React.useState(_ => "")
   let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
@@ -11,7 +11,6 @@ let make = () => {
   )
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
-  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
 
   let eventsToSendToParent = ["openurl_if_required"]
   let isTrustedChild = (ev: Window.event) =>
@@ -50,6 +49,8 @@ let make = () => {
         if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
           let metadata = dict->getJsonObjectFromDict("metadata")
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+          logger.setSdkAuthorization(metaDataDict->getString("sdkAuthorization", ""))
+          logger.setMerchantId(metaDataDict->getString("publishableKey", ""))
           let popupUrl = metaDataDict->getString("popupUrl", "")
           let redirectResponseUrl = metaDataDict->getString("redirectResponseUrl", "")
           setPopupUrl(_ => popupUrl)
@@ -62,7 +63,7 @@ let make = () => {
       } catch {
       | err => {
           let exceptionMessage = err->formatException->JSON.stringify
-          loggerState.setLogError(~value=exceptionMessage, ~eventName=THREE_DS_POPUP_REDIRECTION)
+          logger.setLogError(~value=exceptionMessage, ~eventName=THREE_DS_POPUP_REDIRECTION)
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
         }
       }

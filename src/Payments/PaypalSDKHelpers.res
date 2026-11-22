@@ -23,6 +23,7 @@ let renderButtons = (buttons: some, ~onButtonSettled) =>
 let loadPaypalSDK = (
   ~loggerState: HyperLoggerTypes.loggerMake,
   ~onButtonSettled,
+  ~onConfirmTriggered,
   ~parentOrigin,
   ~sdkHandleOneClickConfirmPayment as _,
   ~buttonStyle: PaypalSDKTypes.style,
@@ -261,6 +262,7 @@ let loadPaypalSDK = (
     },
     onError: err => err->handlePaypalError(~handleCancel, ~handleCloseLoader),
     onClick: () => {
+      onConfirmTriggered()
       loggerState.setLogInfo(
         ~value="Paypal SDK Button Clicked",
         ~eventName=PAYPAL_SDK_FLOW,
@@ -277,6 +279,7 @@ let loadPaypalSDK = (
 let loadBraintreePaypalSdk = (
   ~loggerState: HyperLoggerTypes.loggerMake,
   ~onButtonSettled,
+  ~onConfirmTriggered,
   ~parentOrigin,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
@@ -369,6 +372,7 @@ let loadBraintreePaypalSdk = (
                   },
                   onError: err => err->handlePaypalError(~handleCancel, ~handleCloseLoader),
                   onClick: () => {
+                    onConfirmTriggered()
                     loggerState.setLogInfo(
                       ~value="Paypal Braintree SDK Button Clicked",
                       ~eventName=PAYPAL_SDK_FLOW,

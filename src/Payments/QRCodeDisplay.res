@@ -55,7 +55,7 @@ let getPaymentMethodConfig = method => {
 }
 
 @react.component
-let make = () => {
+let make = (~logger: HyperLoggerTypes.loggerMake) => {
   let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (qrCode, setQrCode) = React.useState(_ => "")
   let (rawQrData, setRawQrData) = React.useState(_ => "")
@@ -67,7 +67,6 @@ let make = () => {
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (headers, setHeaders) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
     getPaymentMethodConfig(Other)
@@ -119,6 +118,8 @@ let make = () => {
           setClientSecret(_ => paymentIntentId)
           let sdkAuthorizationVal = metaDataDict->getString("sdkAuthorization", "")
           setSdkAuthorization(_ => sdkAuthorizationVal)
+          logger.setSdkAuthorization(sdkAuthorizationVal)
+          logger.setMerchantId(publishableKey)
           let headersDict =
             metaDataDict
             ->getJsonObjectFromDict("headers")

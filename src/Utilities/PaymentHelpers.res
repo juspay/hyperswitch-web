@@ -559,6 +559,22 @@ let rec intentCall = (
             | _ => intent.payment_method_type
             }
 
+            if isConfirm {
+              let nextActionType = intent.nextAction.type_
+              handleLogging(
+                ~optLogger,
+                ~value=[
+                  ("status", intent.status->JSON.Encode.string),
+                  ("nextActionType", nextActionType->JSON.Encode.string),
+                ]
+                ->Dict.fromArray
+                ->JSON.Encode.object
+                ->JSON.stringify,
+                ~eventName=CONFIRM_NEXT_ACTION,
+                ~paymentMethod,
+              )
+            }
+
             let url = makeUrl(confirmParam.return_url)
             if isLegacyClientSecretFlow {
               url.searchParams.set("payment_intent_client_secret", clientSecret)
@@ -646,6 +662,8 @@ let rec intentCall = (
                   ("popupUrl", popupUrl->JSON.Encode.string),
                   ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
                   ("paymentMethodFlowCancel", paymentMethodFlowCancelMetadata),
+                  ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+                  ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                 ]
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
@@ -817,6 +835,8 @@ let rec intentCall = (
                     ("returnUrl", url.href->JSON.Encode.string),
                     ("paymentMethod", paymentMethod->JSON.Encode.string),
                     ("payment_intent_data", data),
+                    ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                   ]->Dict.fromArray
                 handleLogging(
                   ~optLogger,
