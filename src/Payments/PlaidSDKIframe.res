@@ -11,8 +11,14 @@ let make = () => {
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (isForceSync, setIsForceSync) = React.useState(_ => false)
   let logger = React.useMemo(
-    () => HyperLogger.make(~source=Elements(Payment), ~clientSecret, ~merchantId=publishableKey),
-    (publishableKey, clientSecret),
+    () =>
+      HyperLogger.make(
+        ~source=Elements(Payment),
+        ~clientSecret,
+        ~merchantId=publishableKey,
+        ~sdkAuthorization,
+      ),
+    (publishableKey, clientSecret, sdkAuthorization),
   )
 
   React.useEffect(() => {

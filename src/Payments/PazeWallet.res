@@ -23,6 +23,8 @@ let make = (~logger: HyperLoggerTypes.loggerMake) => {
         let transactionAmount = metaData->getString("transactionAmount", "")
         let transactionCurrencyCode = metaData->getString("transactionCurrencyCode", "")
         let componentName = metaData->getString("componentName", "")
+        logger.setMerchantId(publishableKey)
+        logger.setSdkAuthorization(metaData->getString("sdkAuthorization", ""))
 
         let mountPazeSDK = () => {
           let pazeScriptURL =

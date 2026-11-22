@@ -51,6 +51,16 @@ let make = (~sessionObj: SessionsType.token) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
+  // Vendor callbacks outlive renders; use the current read-only setting and logger.
+  let confirmTriggerRef = React.useRef((options.readOnly, loggerState))
+  confirmTriggerRef.current = (options.readOnly, loggerState)
+  let onConfirmTriggered = () => {
+    let (readOnly, logger) = confirmTriggerRef.current
+    if !readOnly {
+      LoggerUtils.logConfirmTriggered(~logger, ~source=Wallet, ~paymentMethodType)
+    }
+  }
+
   let buttonStyle = switch options.wallets.payPal {
   | PaypalConfigObj(cfg) =>
     let (_, _, sharedButtonType, _) = options.wallets.style.type_
@@ -181,6 +191,7 @@ let make = (~sessionObj: SessionsType.token) => {
       PaypalSDKHelpers.loadPaypalSDK(
         ~parentOrigin=parentURL,
         ~loggerState,
+        ~onConfirmTriggered,
         ~sdkHandleOneClickConfirmPayment,
         ~buttonStyle,
         ~iframeId,
@@ -220,6 +231,7 @@ let make = (~sessionObj: SessionsType.token) => {
           PaypalSDKHelpers.loadBraintreePaypalSdk(
             ~parentOrigin=parentURL,
             ~loggerState,
+            ~onConfirmTriggered,
             ~sdkHandleOneClickConfirmPayment,
             ~token,
             ~buttonStyle,
