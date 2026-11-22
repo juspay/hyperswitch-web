@@ -4,34 +4,37 @@ open Promise
 let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let paymentMethod = "wallet"
   let paymentMethodType = "apple_pay"
+  let isWallet = walletOptions->Array.includes(paymentMethodType)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
-  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
-  )
-  let {publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let updateSession = Jotai.useAtomValue(JotaiAtoms.updateSession)
+  let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
+  let {publishableKey, sdkAuthorization, parentURL} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let applePayReadiness = Jotai.useAtomValue(JotaiAtoms.isApplePayReady)
+  let isApplePayReady = applePayReadiness->Option.getOr(false)
+  let setIsShowOrPayUsing = Jotai.useSetAtom(JotaiAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Applepay)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Applepay)
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let intent = PaymentHelpers.usePaymentIntent(
+    ~isOneClickWallet=isWallet,
+    Some(loggerState),
+    Applepay,
+  )
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
+  let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Some(loggerState), Applepay)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
   let isApplePaySDKFlow = sessionObj->Option.isSome
-  let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
-  let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
+  let areOneClickWalletsRendered = Jotai.useSetAtom(JotaiAtoms.areOneClickWalletsRendered)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
+  let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
   let isApplePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsApplePayDelayedSessionFlow()
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let isWallet = walletOptions->Array.includes(paymentMethodType)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
 
   let (heightType, _, _, _, _) = options.wallets.style.height
   let sharedHeight = switch heightType {
@@ -271,6 +274,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onApplePayButtonClicked = () => {
+    LoggerUtils.logConfirmTriggered(~logger=loggerState, ~source=Wallet, ~paymentMethodType)
     if isTestMode {
       Console.warn("Apple Pay button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
@@ -316,7 +320,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           )
         }
       } else {
-        makeOneClickHandlerPromise(sdkHandleIsThere)
+        makeOneClickHandlerPromise(sdkHandleIsThere, ~parentOrigin=parentURL)
         ->then(result => {
           let result = result->JSON.Decode.bool->Option.getOr(false)
           if result {
@@ -394,10 +398,17 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   ))
 
   let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let shouldShowWalletShimmer =
     isApplePayDelayedSessionFlow && isApplePayReady && trustPayScriptStatus === Loading
+
+  ReadyHooks.usePendingWhile(
+    ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,
+    isWallet &&
+    (isInvokeSDKFlow || paymentExperience === PaymentMethodsRecord.RedirectToURL) &&
+    applePayReadiness->Option.isNone,
+  )
 
   if isWallet {
     <>

@@ -1,5 +1,5 @@
 type t<'a> = RescriptCore.Promise.t<'a>
-type exn += JsError(RescriptCore.Exn.t)
+type exn += JsError(JsExn.t)
 @new
 external make: ((@uncurry 'a => unit, 'e => unit) => unit) => t<'a> = "Promise"
 @val @scope("Promise")

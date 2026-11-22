@@ -1,7 +1,7 @@
 open CardUtils
 open PaymentMethodCollectTypes
 open PaymentMethodCollectUtils
-open RecoilAtoms
+open JotaiAtoms
 
 @react.component
 let make = (
@@ -11,16 +11,14 @@ let make = (
   ~handleSubmit,
   ~formLayout: formLayout,
 ) => {
-  // Recoil states
-  let {config, constantString, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {enabledPaymentMethodsWithDynamicFields} = Recoil.useRecoilValueFromAtom(
-    paymentMethodCollectOptionAtom,
-  )
-  let (_, setPayoutDynamicFields) = Recoil.useRecoilState(payoutDynamicFieldsAtom)
-  let (formData, setFormData) = Recoil.useRecoilState(formDataAtom)
-  let (activePmt, _) = Recoil.useRecoilState(paymentMethodTypeAtom)
-  let (validityDict, setValidityDict) = Recoil.useRecoilState(validityDictAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  // Jotai state
+  let {config, constantString, localeString} = Jotai.useAtomValue(configAtom)
+  let {enabledPaymentMethodsWithDynamicFields} = Jotai.useAtomValue(paymentMethodCollectOptionAtom)
+  let setPayoutDynamicFields = Jotai.useSetAtom(payoutDynamicFieldsAtom)
+  let (formData, setFormData) = Jotai.useAtom(formDataAtom)
+  let activePmt = Jotai.useAtomValue(paymentMethodTypeAtom)
+  let (validityDict, setValidityDict) = Jotai.useAtom(validityDictAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
@@ -329,6 +327,8 @@ let make = (
         // Sepa
         | (SepaIban, _) => PayoutMethodData(SepaIban)->renderInputTemplate
         | (SepaBic, _) => PayoutMethodData(SepaBic)->renderInputTemplate
+        | (SepaAccountHolderName, None) =>
+          PayoutMethodData(SepaAccountHolderName)->renderInputTemplate
         // Paypal
         | (PaypalMail, _) => PayoutMethodData(PaypalMail)->renderInputTemplate
         | (PaypalMobNumber, _) => PayoutMethodData(PaypalMobNumber)->renderInputTemplate
@@ -350,7 +350,8 @@ let make = (
         | (SepaCountryCode, _)
         | (PixBankAccountNumber, _)
         | (PixBankName, _)
-        | (CardHolderName, Some(_)) => React.null
+        | (CardHolderName, Some(_))
+        | (SepaAccountHolderName, Some(_)) => React.null
         }}
       </React.Fragment>
     )

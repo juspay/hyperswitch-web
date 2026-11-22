@@ -1,6 +1,6 @@
 @react.component
 let make = (~topElement=?, ~bottomElement=?, ~padding="p-5", ~className="") => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let topBlock = switch topElement {
   | Some(ele) => ele
   | None => React.null

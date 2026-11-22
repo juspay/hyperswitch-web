@@ -3,14 +3,18 @@ open Utils
 // Wire a mounted VGS field's focus/blur events to local React state so the
 // container can render the focus ring and clear errors on focus — mirroring the
 // behaviour of a native Hyperswitch input field.
-let handleVGSField = (field: option<VGSTypes.field>, setFocus, setError) => {
+let handleVGSField = (field: option<VGSTypes.field>, setFocus, setError, onFocus, onBlur) => {
   switch field {
   | Some(val) =>
     val.on("focus", _ => {
       setFocus(_ => Some(true))
       setError(_ => "")
+      onFocus()
     })
-    val.on("blur", _ => setFocus(_ => Some(false)))
+    val.on("blur", _ => {
+      setFocus(_ => Some(false))
+      onBlur()
+    })
   | None => ()
   }
 }

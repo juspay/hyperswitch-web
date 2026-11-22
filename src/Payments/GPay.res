@@ -1,5 +1,5 @@
 open Utils
-open RecoilAtoms
+open JotaiAtoms
 
 open GooglePayType
 open Promise
@@ -12,20 +12,22 @@ let make = (
 ) => {
   let paymentMethod = "wallet"
   let paymentMethodType = "google_pay"
+  let isWallet = walletOptions->Array.includes(paymentMethodType)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let {iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
-  let isSDKHandleClick = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
-  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let options = Recoil.useRecoilValueFromAtom(optionAtom)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Gpay)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Gpay)
-  let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
-  let trustPayScriptStatus = Recoil.useRecoilValueFromAtom(RecoilAtoms.trustPayScriptStatus)
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let {iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
+  let isSDKHandleClick = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
+  let {publishableKey} = Jotai.useAtomValue(keys)
+  let updateSession = Jotai.useAtomValue(updateSession)
+  let options = Jotai.useAtomValue(optionAtom)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=isWallet, Some(loggerState), Gpay)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
+  let sync = PaymentHelpers.usePaymentSync(~isOneClickWallet=isWallet, Some(loggerState), Gpay)
+  let gPayReadiness = Jotai.useAtomValue(isGooglePayReady)
+  let isGPayReady = gPayReadiness->Option.getOr(false)
+  let trustPayScriptStatus = Jotai.useAtomValue(JotaiAtoms.trustPayScriptStatus)
+  let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
   let isGooglePayDelayedSessionFlow = ThirdPartyFlowHelpers.useIsGooglePayDelayedSessionFlow()
   let isGooglePaySDKFlow = React.useMemo(() => {
@@ -34,16 +36,15 @@ let make = (
   let isGooglePayThirdPartyFlow = React.useMemo(() => {
     thirdPartySessionObj->Option.isSome
   }, [sessionObj])
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
 
-  let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
+  let areOneClickWalletsRendered = Jotai.useSetAtom(JotaiAtoms.areOneClickWalletsRendered)
 
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let areRequiredFieldsValid = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Jotai.useAtomValue(JotaiAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let isWallet = walletOptions->Array.includes(paymentMethodType)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
 
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
@@ -172,6 +173,7 @@ let make = (
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onGooglePaymentButtonClicked = () => {
+    LoggerUtils.logConfirmTriggered(~logger=loggerState, ~source=Wallet, ~paymentMethodType)
     if isTestMode {
       Console.warn("Google Pay button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
@@ -199,7 +201,7 @@ let make = (
         ~isOneClickWallet=isWallet,
       )
       emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
-      makeOneClickHandlerPromise(isSDKHandleClick)
+      makeOneClickHandlerPromise(isSDKHandleClick, ~parentOrigin=parentURL)
       ->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
@@ -297,12 +299,15 @@ let make = (
     isGooglePayDelayedSessionFlow,
   ))
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
       try {
-        if dict->Dict.get("googlePaySyncPayment")->Option.isSome {
+        if (
+          Utils.isParentMessage(~parentOrigin=parentURL, ev) &&
+          dict->Dict.get("googlePaySyncPayment")->Option.isSome
+        ) {
           syncPayment()
         }
       } catch {
@@ -321,7 +326,7 @@ let make = (
         Window.removeEventListener("message", handleGooglePayMessages)
       },
     )
-  })
+  }, [parentURL])
 
   let isRenderGooglePayButton =
     (isGPayReady ||
@@ -329,6 +334,23 @@ let make = (
     (isGooglePayDelayedSessionFlow && trustPayScriptStatus === Loaded)) && isWallet
 
   let shouldShowWalletShimmer = isGooglePayDelayedSessionFlow && trustPayScriptStatus === Loading
+
+  // The loader only checks availability when Google Pay is set to auto.
+  let isGooglePayEnabled = switch options.wallets.googlePay {
+  | PaymentType.GooglePayConfigString(Auto) | GooglePayConfigObj({display: Auto}) => true
+  | _ => false
+  }
+  let isAvailabilityPending =
+    isGooglePayEnabled &&
+    isGooglePaySDKFlow &&
+    !isGooglePayDelayedSessionFlow &&
+    paymentExperience != PaymentMethodsRecord.RedirectToURL &&
+    gPayReadiness->Option.isNone
+  let isButtonPending = isRenderGooglePayButton && status == "loading"
+  ReadyHooks.usePendingWhile(
+    ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,
+    isWallet && (isAvailabilityPending || isButtonPending),
+  )
 
   React.useEffect(() => {
     areOneClickWalletsRendered(prev => {
@@ -339,7 +361,7 @@ let make = (
   }, [isRenderGooglePayButton])
 
   let submitCallback = GooglePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   if isWallet {
     <>

@@ -1,9 +1,9 @@
-open RecoilAtoms
+open JotaiAtoms
 open Utils
 
 @react.component
 let make = () => {
-  let (blikCode, setblikCode) = Recoil.useRecoilState(userBlikCode)
+  let (blikCode, setblikCode) = Jotai.useAtom(userBlikCode)
 
   let blikCodeRef = React.useRef(Nullable.null)
   let formatBSB = bsb => {
@@ -51,7 +51,7 @@ let make = () => {
       }
     }
   }, [blikCode])
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={true}>
     <PaymentField

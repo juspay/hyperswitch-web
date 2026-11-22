@@ -3,7 +3,7 @@ open SuperpositionTypes
 @react.component
 let make = (~fieldConfig: fieldConfig) => {
   let fieldRef = React.useRef(Nullable.null)
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let {label, placeholder} = DynamicFieldsUtils.resolveFieldTexts(
     ~field=fieldConfig,
     ~localeObject=localeString,

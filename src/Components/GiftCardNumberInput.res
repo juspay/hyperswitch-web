@@ -1,10 +1,10 @@
 @react.component
 let make = () => {
-  open RecoilAtoms
+  open JotaiAtoms
   open Utils
 
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (giftCardNumber, setGiftCardNumber) = Recoil.useRecoilState(userGiftCardNumber)
+  let {localeString} = Jotai.useAtomValue(configAtom)
+  let (giftCardNumber, setGiftCardNumber) = Jotai.useAtom(userGiftCardNumber)
   let giftCardNumberRef = React.useRef(Nullable.null)
 
   let updateGiftCardNumber = val => {
@@ -38,7 +38,7 @@ let make = () => {
     }
   }, [giftCardNumber.value])
 
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   <PaymentField
     fieldName={localeString.giftCardNumberLabel}

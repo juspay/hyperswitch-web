@@ -1,6 +1,6 @@
 @react.component
 let make = (~isSelected) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   let borderColor = isSelected ? themeObj.colorPrimary : themeObj.borderColor
 

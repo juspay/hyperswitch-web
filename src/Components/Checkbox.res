@@ -35,7 +35,7 @@ let checkboxCssStyle = (themeObj: CardThemeType.themeClass) => {
 
 @react.component
 let make = (~isChecked, ~onChange, ~label, ~ariaLabelChecked="", ~ariaLabelUnchecked="") => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   let css = checkboxCssStyle(themeObj)
   let handleChange = ev => {

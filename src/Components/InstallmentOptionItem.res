@@ -6,7 +6,7 @@ let make = (
   ~onSelect,
   ~isLastItem,
 ) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   <div
     onClick={_ => onSelect()}

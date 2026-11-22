@@ -12,7 +12,7 @@
 //   PaymentMethodsSDK (inner iframe)
 //     • reads its `sessions` atom (populated by LoaderController)
 //     • calls getVaultCredentialsFromSessions(sessions) → typed vaultCredentials variant
-//     • stores variant in vaultCredentials Recoil atom
+//     • stores variant in the vaultCredentials Jotai atom
 //
 //   CardsSDK / vault-specific card components
 //     • read vaultCredentials atom
@@ -48,7 +48,7 @@ type vgsVaultType = {
   environment: string,
 }
 
-// ── Typed credentials variant (set in Recoil atom inside the inner iframe) ───
+// ── Typed credentials variant (set in a Jotai atom inside the inner iframe) ──
 
 type vaultCredentials =
   | HyperswitchVault(hyperswitchVaultType)
@@ -181,10 +181,6 @@ type vaultTokenData = {
   expiryYear: string,
 }
 
-// Decodes the vault API response JSON into a vaultTokenData record.
-//   token       ← associated_payment_methods[0].payment_method_token.data
-//   last4Digits ← payment_method_data.card.last4_digits
-//   binNumber   ← payment_method_data.card.card_isin (may be null)
 let decodeVaultTokenData = (vaultResponse: JSON.t): vaultTokenData => {
   let vaultDict = vaultResponse->getDictFromJson
 

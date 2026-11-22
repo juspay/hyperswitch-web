@@ -23,7 +23,7 @@ let brutal = {
   fontSizeXs: "10px",
   fontSize2Xs: "8px",
   fontSize3Xs: "6px",
-  colorSuccess: "",
+  colorSuccess: "#16875B",
   colorWarning: "",
   colorPrimaryText: "#000000",
   colorBackgroundText: "#000000",
@@ -49,6 +49,7 @@ let brutal = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#F2F2F2",
+  inputFieldHeight: "48px",
 }
 let brutalRules = (theme: CardThemeType.themeClass) =>
   {
@@ -210,6 +211,13 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
       "fontSize": theme.fontSize2Xl,
       "fontWeight": theme.fontWeightMedium,
       "marginBottom": "1.5rem",
+    },
+    ".Loader--fullscreen": {
+      "backgroundColor": "rgba(0, 0, 0, 0.8)",
+      "opacity": "0.7",
+    },
+    ".Loader--overlay": {
+      "backgroundColor": "rgba(255, 255, 255, 0.6)",
     },
   }->Identity.anyTypeToJson
 

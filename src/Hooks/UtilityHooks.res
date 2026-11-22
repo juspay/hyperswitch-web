@@ -1,6 +1,6 @@
 let useIsGuestCustomer = () => {
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
-  let {customerPaymentMethods} = RecoilAtoms.optionAtom->Recoil.useRecoilValueFromAtom
+  let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
+  let {customerPaymentMethods} = JotaiAtoms.optionAtom->Jotai.useAtomValue
 
   React.useMemo(() => {
     switch paymentMethodList {
@@ -21,23 +21,23 @@ let useIsGuestCustomer = () => {
   }, (paymentMethodList, customerPaymentMethods))
 }
 
-let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false) => {
-  open RecoilAtoms
+let useHandlePostMessages = (
+  ~complete,
+  ~empty,
+  ~paymentType,
+  ~savedMethod=false,
+  ~enabled=true,
+) => {
+  open JotaiAtoms
 
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
 
   React.useEffect(() => {
-    Utils.handlePostMessageEvents(
-      ~iframeId,
-      ~complete,
-      ~empty,
-      ~paymentType,
-      ~loggerState,
-      ~savedMethod,
-    )
+    if enabled {
+      Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod)
+    }
     None
-  }, (complete, empty, paymentType, savedMethod))
+  }, (complete, empty, paymentType, savedMethod, enabled))
 }
 
 let useIsCustomerAcceptanceRequired = (
@@ -45,7 +45,7 @@ let useIsCustomerAcceptanceRequired = (
   ~isSaveCardsChecked,
   ~isGuestCustomer,
 ) => {
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
 
   React.useMemo(() => {
     if displaySavedPaymentMethodsCheckbox {
@@ -61,28 +61,32 @@ let useIsCustomerAcceptanceRequired = (
   ))
 }
 
-let useSendEventsToParent = eventsToSendToParent => {
-  React.useEffect0(() => {
+let useSendEventsToParent = (~isTrustedChild, eventsToSendToParent) => {
+  React.useEffect(() => {
     let handle = (ev: Window.event) => {
       let eventDataObject = ev.data->Identity.anyTypeToJson
       let eventsDict = eventDataObject->Utils.getDictFromJson
 
-      let events = eventsDict->Dict.keysToArray
+      let isFromChildFrame =
+        Window.querySelectorAll("iframe")->Array.some(iframe =>
+          ev.source === iframe->Window.contentWindow
+        )
+      let allowedEvents =
+        eventsDict
+        ->Dict.toArray
+        ->Array.filter(((key, _)) => eventsToSendToParent->Array.includes(key))
 
-      let shouldSendToParent =
-        events->Array.some(event => eventsToSendToParent->Array.includes(event))
-
-      if shouldSendToParent {
-        Utils.messageParentWindow(eventsDict->Dict.toArray)
+      if isFromChildFrame && isTrustedChild(ev) && allowedEvents->Array.length > 0 {
+        Utils.messageParentWindow(allowedEvents)
       }
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  })
+  }, [isTrustedChild])
 }
 
 let useUpdateRedirectionFlags = () => {
-  let setRedirectionFlags = Recoil.useSetRecoilState(RecoilAtoms.redirectionFlagsAtom)
+  let setRedirectionFlags = Jotai.useSetAtom(JotaiAtoms.redirectionFlagsAtom)
   let updateRedirectionFlagsAtom = paymentOptions => {
     let topRedirection =
       paymentOptions

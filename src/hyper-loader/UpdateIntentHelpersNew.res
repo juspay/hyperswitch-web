@@ -9,7 +9,8 @@ open HyperLoggerTypes
 // --- Iframe messaging helpers ---
 
 let postMessageToIframes = (iframes: array<Nullable.t<Dom.element>>, message) => {
-  iframes->Array.forEach(ifR => ifR->Window.iframePostMessage(message))
+  let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+  iframes->Array.forEach(ifR => ifR->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin))
 }
 
 let postResponseToIframes = (iframes, key, response) => {
@@ -22,11 +23,28 @@ let setOverlayLoading = (iframes, isLoading) => {
 
 // --- Ready signal listener ---
 
-let waitForReady = () => {
+let waitForReady = iframes => {
+  let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
   Promise.make((resolve, _) => {
     let onMessage = (event: Types.event) => {
       let dict = event.data->anyTypeToJson->getDictFromJson
-      if dict->getBool("ready", false) {
+      let fromWidget = iframes->Array.some(iframe =>
+        iframe
+        ->Nullable.toOption
+        ->Option.map(
+          element =>
+            element->Window.Element.isConnected &&
+              PaymentMessageSecurity.isExpectedSender(
+                ~source=element->Window.contentWindow,
+                ~origin=sdkOrigin,
+                ~eventSource=event.source,
+                ~eventOrigin=event.origin,
+              ),
+        )
+        ->Option.getOr(false)
+      )
+      if fromWidget && dict->getBool("ready", false) {
+        removeSmartEventListener("message", "updateIntent.ready")
         resolve()
       }
     }
@@ -179,6 +197,7 @@ let setupPreMountLoaderPromises = (
   ~selectorString,
   ~currentClientSecret,
   ~currentSdkAuthorization,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   let preMountLoaderIframeDiv = mountPreMountLoaderIframe(
     ~publishableKey,
@@ -192,14 +211,34 @@ let setupPreMountLoaderPromises = (
     ~currentSdkAuthorization,
   )
 
+  let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
+  let isFromPreMountLoader = (event: Types.event) =>
+    preMountLoaderIframeDiv
+    ->Nullable.toOption
+    ->Option.map(iframe =>
+      PaymentMessageSecurity.isExpectedSender(
+        ~source=iframe->Window.contentWindow,
+        ~origin=sdkOrigin,
+        ~eventSource=event.source,
+        ~eventOrigin=event.origin,
+      )
+    )
+    ->Option.getOr(false)
+
   let preMountLoaderMountedPromise = Promise.make((resolve, _reject) => {
     let preMountLoaderIframeCallback = (ev: Types.event) => {
       let json = ev.data->anyTypeToJson
       let dict = json->getDictFromJson
-      if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
+      if (
+        isFromPreMountLoader(ev) &&
+        dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome
+      ) {
         resolve(true->JSON.Encode.bool)
-      } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
+      } else if (
+        isFromPreMountLoader(ev) && dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome
+      ) {
         unMountPreMountLoaderIframe(selectorString)
+        logger.setLogInfo(~value="", ~eventName=PRE_MOUNT_LOADER_CLEANUP)
       }
     }
     addSmartEventListener("message", preMountLoaderIframeCallback, "onPreMountLoaderIframeCallback")
@@ -213,13 +252,14 @@ let setupPreMountLoaderPromises = (
         let handleData = (event: Types.event) => {
           let json = event.data->anyTypeToJson
           let dict = json->getDictFromJson
-          if dict->getString("data", "") === dataKey {
+          if isFromPreMountLoader(event) && dict->getString("data", "") === dataKey {
+            removeSmartEventListener("message", listenerName)
             resolve(dict->getJsonFromDict("response", JSON.Encode.null))
           }
         }
         addSmartEventListener("message", handleData, listenerName)
         let msg = [(sendKey, true->JSON.Encode.bool)]->Dict.fromArray
-        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+        preMountLoaderIframeDiv->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
       })
     })
   }
@@ -244,12 +284,12 @@ let setupPreMountLoaderPromises = (
 
   let requestMsg =
     [("requestPreMountLoaderMountedCallback", true->JSON.Encode.bool)]->Dict.fromArray
-  preMountLoaderIframeDiv->Window.iframePostMessage(requestMsg)
+  preMountLoaderIframeDiv->Window.iframePostMessage(requestMsg, ~targetOrigin=sdkOrigin)
 
   Promise.all([sessionTokensData, sdkConfigsData, clientListData])
   ->Promise.then(_ => {
     let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
-    preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+    preMountLoaderIframeDiv->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
     Promise.resolve()
   })
   ->Promise.catch(_ => Promise.resolve())
@@ -311,6 +351,7 @@ let performUpdateIntent = async (
         ~selectorString,
         ~currentClientSecret=clientSecretRef.contents,
         ~currentSdkAuthorization=newSdkAuthorization,
+        ~logger,
       )
 
       // Wait for ALL API responses before updating anything.
@@ -339,6 +380,7 @@ let performUpdateIntent = async (
         // All API calls succeeded — now commit state changes
 
         sdkAuthorizationRef.contents = newSdkAuthorization
+        logger.setSdkAuthorization(newSdkAuthorization)
 
         sessionTokensDataPromise.contents = newSessionTokensPromise
         sdkConfigsDataPromise.contents = newSdkConfigsDataPromise
@@ -354,7 +396,7 @@ let performUpdateIntent = async (
 
         // Wait for the payment element to signal ready (only if a payment element is mounted)
         let readyPromise = if shouldWaitForReady {
-          Some(waitForReady())
+          Some(waitForReady(iframes))
         } else {
           None
         }

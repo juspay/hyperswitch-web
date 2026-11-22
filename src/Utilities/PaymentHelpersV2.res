@@ -135,7 +135,7 @@ let intentCall = (
               | (Paypal, false) =>
                 if !isPaymentSession {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnCompleteDoThisMessage()
+                    handleOnPaymentCompleteMessage()
                   } else {
                     closePaymentLoaderIfAny()
                   }
@@ -143,7 +143,7 @@ let intentCall = (
                   postSubmitResponse(~jsonData=data, ~url=url.href)
                 } else if confirmParam.redirect === Some("always") {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnCompleteDoThisMessage()
+                    handleOnPaymentCompleteMessage()
                   } else {
                     handleOpenUrl(url.href)
                   }
@@ -153,7 +153,7 @@ let intentCall = (
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
                   closePaymentLoaderIfAny()
-                  handleOnCompleteDoThisMessage()
+                  handleOnPaymentCompleteMessage()
                 } else {
                   handleOpenUrl(url.href)
                 }
@@ -292,6 +292,27 @@ let fetchPaymentManagementList = (
   })
 }
 
+let retrievePaymentMethodSession = (
+  ~pmSessionId,
+  ~endpoint,
+  ~customPodUri,
+  ~sdkAuthorization,
+  ~logger,
+) => {
+  let headers = [("Authorization", sdkAuthorization)]
+  let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}`
+
+  fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHOD_SESSION_RETRIEVE_CALL,
+    ~logger,
+    ~method=#GET,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~onSuccess=data => data,
+    ~onFailure=_ => JSON.Encode.null,
+  )
+}
+
 let deletePaymentMethodV2 = (
   ~paymentMethodToken,
   ~pmSessionId,
@@ -329,50 +350,31 @@ let deletePaymentMethodV2 = (
   })
 }
 
-let updatePaymentMethod = (
-  ~bodyArr,
-  ~pmSessionId,
-  ~logger as _,
-  ~customPodUri,
-  ~sdkAuthorization,
-) => {
-  open Promise
+let updatePaymentMethod = (~bodyArr, ~pmSessionId, ~logger, ~customPodUri, ~sdkAuthorization) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
-  fetchApi(
+  fetchApiWithLogging(
     uri,
+    ~eventName=PAYMENT_METHOD_SESSION_UPDATE_CALL,
+    ~logger,
     ~method=#PUT,
     ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~onSuccess=data => data,
+    ~onFailure=_ => JSON.Encode.null,
   )
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
 }
 
 let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
-  open RecoilAtoms
-  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
+  open JotaiAtoms
+  let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
+  let keys = Jotai.useAtomValue(keys)
   let {sdkAuthorization} = keys
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  let customPodUri = Jotai.useAtomValue(customPodUri)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -424,13 +426,13 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
 }
 
 let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
-  open RecoilAtoms
-  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
+  open JotaiAtoms
+  let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
+  let keys = Jotai.useAtomValue(keys)
   let {sdkAuthorization} = keys
-  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
-  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
-  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  let customPodUri = Jotai.useAtomValue(customPodUri)
+  let isCallbackUsedVal = Jotai.useAtomValue(JotaiAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Jotai.useAtomValue(redirectionFlagsAtom)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -481,32 +483,19 @@ let useUpdateCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType
   }
 }
 
-let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization, ~logger as _) => {
-  open Promise
+let savePaymentMethod = (~bodyArr, ~pmSessionId, ~sdkAuthorization, ~logger) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Authorization", sdkAuthorization)]
   let uri = `${endpoint}/v1/payment-method-sessions/${pmSessionId}/confirm`
 
-  fetchApi(
+  fetchApiWithLogging(
     uri,
+    ~eventName=PAYMENT_METHOD_SESSION_CONFIRM_CALL,
+    ~logger,
     ~method=#POST,
     ~bodyStr=bodyArr->getJsonFromArrayOfJson->JSON.stringify,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri=""),
+    ~onSuccess=data => data,
+    ~onFailure=_ => JSON.Encode.null,
   )
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
 }

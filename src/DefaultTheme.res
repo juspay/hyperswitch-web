@@ -23,7 +23,7 @@ let default = {
   fontSizeXs: "10px",
   fontSize2Xs: "8px",
   fontSize3Xs: "6px",
-  colorSuccess: "",
+  colorSuccess: "#16875B",
   colorWarning: "",
   colorPrimaryText: "#5469d4",
   colorBackgroundText: "",
@@ -49,6 +49,7 @@ let default = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#F6F8FA",
+  inputFieldHeight: "48px",
 }
 let defaultRules = theme =>
   {
@@ -226,6 +227,15 @@ let defaultRules = theme =>
       "fontSize": theme.fontSize2Xl,
       "fontWeight": theme.fontWeightMedium,
       "marginBottom": "1.5rem",
+    },
+    ".Loader--fullscreen": {
+      "backgroundColor": "rgba(0, 0, 0, 0.8)",
+      "backdropFilter": "blur(40px) contrast(1.25)",
+      "opacity": "0.7",
+    },
+    ".Loader--overlay": {
+      "backgroundColor": "rgba(255, 255, 255, 0.4)",
+      "backdropFilter": "blur(4px)",
     },
   }->Identity.anyTypeToJson
 

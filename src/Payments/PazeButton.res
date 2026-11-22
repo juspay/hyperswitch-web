@@ -1,31 +1,36 @@
 @react.component
 let make = (~token: SessionsType.token) => {
   open Utils
-  open RecoilAtoms
+  open JotaiAtoms
 
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
-  let {iframeId, publishableKey, clientSecret, sdkAuthorization} = Recoil.useRecoilValueFromAtom(
+  let {iframeId, publishableKey, clientSecret, sdkAuthorization, parentURL} = Jotai.useAtomValue(
     keys,
   )
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let options = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {themeObj} = Jotai.useAtomValue(configAtom)
+  let updateSession = Jotai.useAtomValue(updateSession)
+  let options = Jotai.useAtomValue(optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
+  let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Some(loggerState), Paze)
   let paymentIntentId = Utils.getPaymentIdOrExtractFromSdkAuth(
     ~clientSecret=clientSecret->Option.getOr(""),
     ~sdkAuthorization=sdkAuthorization->Utils.getNonEmptyOption,
   )
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
   let {country, state, pinCode} = PaymentUtils.useNonPiiAddressData()
 
   let onClick = _ => {
+    LoggerUtils.logConfirmTriggered(
+      ~logger=loggerState,
+      ~source=Wallet,
+      ~paymentMethodType="paze",
+    )
     if isTestMode {
       Console.warn("Paze button clicked in test mode - interaction disabled")
       loggerState.setLogInfo(
@@ -63,6 +68,7 @@ let make = (~token: SessionsType.token) => {
           ("clientProfileId", token.clientProfileId->JSON.Encode.string),
           ("sessionId", paymentIntentId->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
+          ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
           ("emailAddress", token.email_address->JSON.Encode.string),
           ("transactionAmount", token.transaction_amount->JSON.Encode.string),
           ("transactionCurrencyCode", token.transaction_currency_code->JSON.Encode.string),
@@ -78,10 +84,10 @@ let make = (~token: SessionsType.token) => {
   }
 
   React.useEffect(() => {
-    let handlePazeCallback = ev => {
+    let handlePazeCallback = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson->getDictFromDict("data")
-      if dict->getBool("isPaze", false) {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) && dict->getBool("isPaze", false) {
         setShowLoader(_ => false)
         messageParentWindow([
           ("fullscreen", true->JSON.Encode.bool),
@@ -106,7 +112,7 @@ let make = (~token: SessionsType.token) => {
     setIsShowOrPayUsing(_ => true)
     Window.addEventListener("message", handlePazeCallback)
     Some(() => Window.removeEventListener("message", handlePazeCallback))
-  }, [sdkAuthorization])
+  }, (sdkAuthorization, parentURL))
   <button
     disabled={showLoader}
     onClick

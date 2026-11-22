@@ -10,7 +10,6 @@ let make = (
   ~setIsClickToPayAuthenticateError,
   ~setPaymentToken,
   ~paymentTokenVal,
-  ~cvcProps,
   ~getVisaCards,
   ~setIsClickToPayRememberMe,
   ~closeComponentIfSavedMethodsAreEmpty,
@@ -20,8 +19,8 @@ let make = (
   ~installmentsError,
   ~setInstallmentsError,
 ) => {
-  let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
-  let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
+  let (clickToPayConfig, setClickToPayConfig) = Jotai.useAtom(JotaiAtoms.clickToPayConfig)
+  let setShowPaymentMethodsScreen = Jotai.useSetAtom(JotaiAtoms.showPaymentMethodsScreen)
   let (_, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let (isShowClickToPayNotYou, setIsShowClickToPayNotYou) = React.useState(_ => false)
   let (isCTPAuthenticateNotYouClicked, setIsCTPAuthenticateNotYouClicked) = React.useState(_ =>
@@ -213,7 +212,6 @@ let make = (
           brandIcon={customerMethod->CardUtils.getPaymentMethodBrand}
           index=i
           savedCardlength={ctpCards->Array.length}
-          cvcProps
           setRequiredFieldsBody
           setSelectedInstallmentPlan
           showInstallments
@@ -221,6 +219,8 @@ let make = (
           installmentsError
           setInstallmentsError
           eligibilitySurchargeDetails=None
+          eligibilityOfferDetails=None
+          eligibilityError=None
         />
       })
       ->React.array}

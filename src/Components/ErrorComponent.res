@@ -1,8 +1,8 @@
-open RecoilAtoms
+open JotaiAtoms
 
 @react.component
 let make = (~errorStr=None, ~cardError="", ~expiryError="", ~cvcError="") => {
-  let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, config} = Jotai.useAtomValue(configAtom)
   let {innerLayout} = config.appearance
 
   let errorTextStyle: JsxDOM.style = {

@@ -1,6 +1,6 @@
 type t<+'a> = promise<'a>
 
-exception JsError(Exn.t)
+exception JsError(JsExn.t)
 
 @new
 external make: ((@uncurry 'a => unit, 'e => unit) => unit) => t<'a> = "Promise"
@@ -41,10 +41,14 @@ external _catch: (t<'a>, @uncurry exn => t<'a>) => t<'a> = "catch"
 
 let catch = (promise, callback) => {
   _catch(promise, err => {
-    let v = if Exn.isCamlExceptionOrOpenVariant(err) {
+    let normalizedError = JsExn.anyToExnInternal(err)
+    let v = if normalizedError === err {
       err
     } else {
-      JsError(Identity.unsafeToJsExn(err))
+      switch normalizedError {
+      | JsExn(jsError) => JsError(jsError)
+      | rescriptException => rescriptException
+      }
     }
     callback(v)
   })

@@ -1,8 +1,8 @@
 open VGSTypes
 
-// Pinned VGS Collect.js version — must stay in sync with the script src + integrity
-// hash in VGSVault.res and the CSP allow-list in webpack.common.js.
 let vgsScriptURL = `https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js`
+
+let vgsScriptIntegrity = "sha384-ddxU1XAc77oB4EIpKOgJQ3FN2a6STYPK0JipRqg1x/eW+n5MFn1XbbZa7+KRjkqc"
 
 let cardNumberOptions = {
   \"type": "card-number",
@@ -36,18 +36,40 @@ let savedCardCvcCss =
   [
     ("padding", "0px"),
     ("margin", "0px"),
-    ("line-height", "1.8rem"),
-    ("height", "1.8rem"),
+    ("line-height", SavedCardCvcStyles.fieldHeight),
+    ("height", SavedCardCvcStyles.fieldHeight),
     ("box-sizing", "border-box"),
   ]
   ->Array.map(((key, value)) => (key, value->JSON.Encode.string))
   ->Dict.fromArray
   ->JSON.Encode.object
 
-// Saved-card cvc field options: like cardCvcOptions but without the card icon and
-// with the compact sizing above, to match the non-vault saved-card cvc input.
-let savedCardCvcOptions = {
+let savedCardCvcValidations = savedCardBrand => {
+  let exactLengthPatterns =
+    CardValidations.getobjFromCardPattern(savedCardBrand).cvcLength
+    ->Array.map(length => `\\d{${length->Int.toString}}`)
+    ->Array.join("|")
+  ["required", `/^(?:${exactLengthPatterns})$/`]
+}
+
+// Without a card-number field VGS cannot infer the card brand, so use the saved
+// card's exact legacy CVC lengths instead of generic validCardSecurityCode.
+let savedCardCvcOptions = savedCardBrand => {
   ...cardCvcOptions,
+  validations: savedCardCvcValidations(savedCardBrand),
   showCardIcon: false,
   css: savedCardCvcCss,
+}
+
+type cardHolderNameFieldOptions = {
+  ...fieldOptions,
+  autoComplete: string,
+}
+
+let cardHolderNameOptions = (placeholder): cardHolderNameFieldOptions => {
+  \"type": "text",
+  name: "card_holder",
+  placeholder,
+  validations: [],
+  autoComplete: "cc-name",
 }

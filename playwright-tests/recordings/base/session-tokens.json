@@ -1,0 +1,17 @@
+{
+  "_source": "synthetic",
+  "_note": "No wallets configured on the default (Stripe) profile: empty session_token list.",
+  "routes": [
+    {
+      "name": "sessionTokens",
+      "method": "POST",
+      "path": "/payments/session_tokens",
+      "status": 200,
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "client_secret": "{{intent.client_secret}}",
+        "session_token": []
+      }
+    }
+  ]
+}

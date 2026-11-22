@@ -39,6 +39,16 @@ let getColorScheme = (str): colorScheme => {
   }
 }
 
+let getColorSchemeFromAppearance = appearance =>
+  appearance->getDictFromJson->getString("colorScheme", "light")->getColorScheme
+
+let getColorSchemeValue = (colorScheme: colorScheme) =>
+  switch colorScheme {
+  | Auto => "light dark"
+  | Dark => "dark"
+  | Light => "light"
+  }
+
 let setColorSchemeMeta = (colorScheme: colorScheme) => {
   open Window
   let meta = switch querySelector(`meta[name="color-scheme"]`)->Nullable.toOption {
@@ -49,12 +59,7 @@ let setColorSchemeMeta = (colorScheme: colorScheme) => {
     head->appendChildElement(el)
     el
   }
-  let colorSchemeVal = switch colorScheme {
-  | Auto => "light dark"
-  | Dark => "dark"
-  | Light => "light"
-  }
-  meta->setAttribute("content", colorSchemeVal)
+  meta->setAttribute("content", colorScheme->getColorSchemeValue)
 }
 
 let getShowLoader = str => {
@@ -93,7 +98,7 @@ let defaultConfig = {
   loader: Auto,
   sdkAuthorization: "",
 }
-type recoilConfig = {
+type jotaiConfig = {
   config: configClass,
   themeObj: themeClass,
   localeString: LocaleStringTypes.localeStrings,
@@ -110,24 +115,38 @@ let getLocaleObject = async string => {
     }
 
     let promiseLocale = switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
-    | EN => Js.import(EnglishLocale.localeStrings)
-    | HE => Js.import(HebrewLocale.localeStrings)
-    | FR => Js.import(FrenchLocale.localeStrings)
-    | EN_GB => Js.import(EnglishGBLocale.localeStrings)
-    | AR => Js.import(ArabicLocale.localeStrings)
-    | JA => Js.import(JapaneseLocale.localeStrings)
-    | DE => Js.import(DeutschLocale.localeStrings)
-    | FR_BE => Js.import(FrenchBelgiumLocale.localeStrings)
-    | ES => Js.import(SpanishLocale.localeStrings)
-    | CA => Js.import(CatalanLocale.localeStrings)
-    | ZH => Js.import(ChineseLocale.localeStrings)
-    | PT => Js.import(PortugueseLocale.localeStrings)
-    | IT => Js.import(ItalianLocale.localeStrings)
-    | PL => Js.import(PolishLocale.localeStrings)
-    | NL => Js.import(DutchLocale.localeStrings)
-    | SV => Js.import(SwedishLocale.localeStrings)
-    | RU => Js.import(RussianLocale.localeStrings)
-    | ZH_HANT => Js.import(TraditionalChineseLocale.localeStrings)
+    | EN => import(EnglishLocale.localeStrings)
+    | HE => import(HebrewLocale.localeStrings)
+    | FR => import(FrenchLocale.localeStrings)
+    | EN_GB => import(EnglishGBLocale.localeStrings)
+    | AR => import(ArabicLocale.localeStrings)
+    | JA => import(JapaneseLocale.localeStrings)
+    | DE => import(DeutschLocale.localeStrings)
+    | FR_BE => import(FrenchBelgiumLocale.localeStrings)
+    | FR_CA => import(FrenchCanadianLocale.localeStrings)
+    | ES => import(SpanishLocale.localeStrings)
+    | CA => import(CatalanLocale.localeStrings)
+    | ZH => import(ChineseLocale.localeStrings)
+    | PT => import(PortugueseLocale.localeStrings)
+    | IT => import(ItalianLocale.localeStrings)
+    | PL => import(PolishLocale.localeStrings)
+    | NL => import(DutchLocale.localeStrings)
+    | SV => import(SwedishLocale.localeStrings)
+    | RU => import(RussianLocale.localeStrings)
+    | ZH_HANT => import(TraditionalChineseLocale.localeStrings)
+    | DA => import(DanishLocale.localeStrings)
+    | LT => import(LithuanianLocale.localeStrings)
+    | CS => import(CzechLocale.localeStrings)
+    | SK => import(SlovakLocale.localeStrings)
+    | IS => import(IcelandicLocale.localeStrings)
+    | CY => import(WelshLocale.localeStrings)
+    | EL => import(GreekLocale.localeStrings)
+    | ET => import(EstonianLocale.localeStrings)
+    | FI => import(FinnishLocale.localeStrings)
+    | NB => import(NorwegianLocale.localeStrings)
+    | BS => import(BosnianLocale.localeStrings)
+    | MS => import(MalayLocale.localeStrings)
+    | TR_CY => import(TurkishLocale.localeStrings)
     }
 
     let awaitedLocaleValue = await promiseLocale
@@ -139,14 +158,14 @@ let getLocaleObject = async string => {
 
 let getConstantStringsObject = async () => {
   try {
-    let promiseConstantStrings = Js.import(ConstantStrings.constantStrings)
+    let promiseConstantStrings = import(ConstantStrings.constantStrings)
     await promiseConstantStrings
   } catch {
   | _ => ConstantStrings.constantStrings
   }
 }
 
-let defaultRecoilConfig: recoilConfig = {
+let defaultJotaiConfig: jotaiConfig = {
   config: defaultConfig,
   themeObj: defaultConfig.appearance.variables,
   localeString: EnglishLocale.localeStrings,
@@ -204,6 +223,7 @@ let getVariables = (str, dict, default, logger) => {
       "buttonTextFontSize",
       "buttonTextFontWeight",
       "buttonBorderWidth",
+      "inputFieldHeight",
     ]
     unknownKeysWarning(validKeys, json, "appearance.variables")
     {
@@ -366,6 +386,12 @@ let getVariables = (str, dict, default, logger) => {
         default.disabledFieldColor,
         ~logger,
       ),
+      inputFieldHeight: getWarningString(
+        json,
+        "inputFieldHeight",
+        default.inputFieldHeight,
+        ~logger,
+      ),
     }
   })
   ->Option.getOr(default)
@@ -415,7 +441,7 @@ let getFonts = (str, dict, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.filterMap(JSON.Decode.object)
   ->Array.map(json => {
     unknownKeysWarning(["cssSrc", "family", "src", "weight"], json, "fonts")
     {

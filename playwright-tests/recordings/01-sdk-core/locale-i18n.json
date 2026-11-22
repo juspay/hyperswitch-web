@@ -1,0 +1,115 @@
+{
+  "_source": "synthetic",
+  "_note": "The billing-header test uses the Cybersource profile with no billing/email on the intent, so the router's required fields make the SDK render the billing section (header = localeString.billingDetailsText). Hermetic stand-in: on the Cybersource profile only, sdk_config.json carries a minimal superposition raw_configs (shape from shared-code/sdk-utils/superposition/superposition.js CacReader + SuperpositionHelper.convertConfigurationToRequiredFields) that makes billing email + address line1/city/zip required for connector=cybersource, payment_method=Card. Every other profile keeps base/sdk-configs.json.",
+  "routes": [
+    {
+      "name": "sdkConfigs",
+      "method": "GET",
+      "path": "/v1/sdk/configs/web/sdk_config.json",
+      "status": 200,
+      "body": {
+        "payment_methods": [
+          {
+            "payment_method": "card",
+            "payment_method_types": [
+              {
+                "payment_method_type": "credit",
+                "payment_method_criteria": "connector",
+                "criteria_rules": [
+                  {
+                    "criteria_value": "default",
+                    "eligible_connectors": [
+                      "cybersource"
+                    ]
+                  }
+                ]
+              },
+              {
+                "payment_method_type": "debit",
+                "payment_method_criteria": "connector",
+                "criteria_rules": [
+                  {
+                    "criteria_value": "default",
+                    "eligible_connectors": [
+                      "cybersource"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "account_config": {
+          "profile": {
+            "vaulting_action": "skip",
+            "collect_shipping_details_from_wallet_connector": false,
+            "collect_billing_details_from_wallet_connector": false,
+            "always_collect_shipping_details_from_wallet_connector": false,
+            "always_collect_billing_details_from_wallet_connector": false
+          }
+        },
+        "context_used": {
+          "profile_id": "{{intent.profile_id}}",
+          "processor_merchant_id": "{{merchant_id}}",
+          "organization_id": "org_hermetic"
+        },
+        "raw_configs": {
+          "default_configs": {
+            "billing_email._is_required": false,
+            "billing_email._confirm_request_write_path": "payment_method_data.billing.email",
+            "billing_email._field_render_type": "Email",
+            "billing_email._default_label_text": "Email",
+            "billing_email._intent_data_read_path": "billing.email",
+            "billing_email._field_display_order": 10,
+            "billing_email._html_autocomplete_attribute": "email",
+            "billing_line1._is_required": false,
+            "billing_line1._confirm_request_write_path": "payment_method_data.billing.address.line1",
+            "billing_line1._field_render_type": "Generic",
+            "billing_line1._default_label_text": "Address line 1",
+            "billing_line1._intent_data_read_path": "billing.address.line1",
+            "billing_line1._field_display_order": 20,
+            "billing_line1._html_autocomplete_attribute": "address-line1",
+            "billing_city._is_required": false,
+            "billing_city._confirm_request_write_path": "payment_method_data.billing.address.city",
+            "billing_city._field_render_type": "Generic",
+            "billing_city._default_label_text": "City",
+            "billing_city._intent_data_read_path": "billing.address.city",
+            "billing_city._field_display_order": 30,
+            "billing_city._html_autocomplete_attribute": "address-level2",
+            "billing_zip._is_required": false,
+            "billing_zip._confirm_request_write_path": "payment_method_data.billing.address.zip",
+            "billing_zip._field_render_type": "Generic",
+            "billing_zip._default_label_text": "Postal Code",
+            "billing_zip._intent_data_read_path": "billing.address.zip",
+            "billing_zip._field_display_order": 40,
+            "billing_zip._html_autocomplete_attribute": "postal-code"
+          },
+          "contexts": [
+            {
+              "condition": {
+                "connector": "cybersource",
+                "payment_method": "Card"
+              },
+              "override_with_keys": [
+                "cybersource_card_billing"
+              ]
+            }
+          ],
+          "overrides": {
+            "cybersource_card_billing": {
+              "billing_email._is_required": true,
+              "billing_line1._is_required": true,
+              "billing_city._is_required": true,
+              "billing_zip._is_required": true
+            }
+          }
+        }
+      },
+      "match": {
+        "intent": {
+          "profile_id": "{{profiles.cybersource}}"
+        }
+      }
+    }
+  ]
+}

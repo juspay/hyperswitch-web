@@ -12,7 +12,7 @@ type eventData = {
   oneClickConfirmTriggered: bool,
 }
 type loaderEvent = {key: string, data: eventData}
-type event = {key: string, data: string, origin: string}
+type event = {key: string, data: string, origin: string, source: Dom.element}
 type date = {now: unit => string}
 type body
 type packageJson = {version: string}
@@ -48,12 +48,25 @@ type elementRef
 @val external parent: window = "parent"
 @val @scope("document") external createElement: string => Dom.element = "createElement"
 @val @scope("document") external querySelector: string => Nullable.t<Dom.element> = "querySelector"
-@val @scope("document") external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
+@val @scope("document")
+external querySelectorAllNodes: string => Dom.nodeList = "querySelectorAll"
+@val @scope("Array") external nodeListToArray: Dom.nodeList => array<Dom.element> = "from"
+// The DOM returns a NodeList; callers using Array helpers need a real array.
+let querySelectorAll = selector => querySelectorAllNodes(selector)->nodeListToArray
 @module("/package.json") @val external packageJson: packageJson = "default"
 @val @scope("document") external body: body = "body"
 @val @scope("document") external head: Dom.element = "head"
 @send external appendChildElement: (Dom.element, Dom.element) => unit = "appendChild"
 @send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
+@send external showPopover: Dom.element => unit = "showPopover"
+@val @scope(("HTMLElement", "prototype"))
+external showPopoverFn: Nullable.t<unit => unit> = "showPopover"
+@send
+external setStylePropertyImportant: (style, string, string, string) => unit = "setProperty"
+type cssStyleSheet
+@new external makeCssStyleSheet: unit => cssStyleSheet = "CSSStyleSheet"
+@send external replaceSync: (cssStyleSheet, string) => unit = "replaceSync"
+@get external adoptedStyleSheets: document => array<cssStyleSheet> = "adoptedStyleSheets"
 
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
@@ -64,6 +77,7 @@ external elementQuerySelector: (elementRef, string) => Nullable.t<element> = "qu
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
 @val @scope("window") external btoa: string => string = "btoa"
 @val @scope("window") external atob: string => string = "atob"
+@val @scope("crypto") external randomUUID: unit => string = "randomUUID"
 @new external date: date = "Date"
 @get external value: Dom.element => 'a = "value"
 
@@ -75,6 +89,8 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @get external fullscreen: window => option<window> = "fullscreen"
 @get external frames: window => {..} = "frames"
 @get external name: window => string = "name"
+@get external framesLength: {..} => int = "length"
+@get_index external frameAt: ({..}, int) => window = ""
 @get external contentWindow: Dom.element => Dom.element = "contentWindow"
 @get external style: Dom.element => style = "style"
 @get external readyState: document => string = "readyState"
@@ -202,13 +218,15 @@ let sendPostMessageJSON = (element, message) => {
   element->postMessageJSON(message, GlobalVars.targetOrigin)
 }
 
-let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
+let iframePostMessage = (
+  iframeRef: nullable<Dom.element>,
+  message,
+  ~targetOrigin=GlobalVars.targetOrigin,
+) => {
   switch iframeRef->Nullable.toOption {
   | Some(ref) =>
     try {
-      ref
-      ->contentWindow
-      ->sendPostMessage(message)
+      ref->contentWindow->postMessage(message->JSON.Encode.object->JSON.stringify, targetOrigin)
     } catch {
     | _ => ()
     }

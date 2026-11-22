@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 open Utils
 open Promise
 open KlarnaSDKTypes
@@ -11,21 +11,27 @@ let make = (~sessionObj: SessionsType.token) => {
   let paymentMethodType = "klarna"
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
-  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
-  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
-  let {publishableKey, iframeId, sdkAuthorization} = Recoil.useRecoilValueFromAtom(keys)
-  let options = Recoil.useRecoilValueFromAtom(optionAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
+  let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
+  let updateSession = Jotai.useAtomValue(updateSession)
+  let {publishableKey, iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
+  let options = Jotai.useAtomValue(optionAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Some(loggerState), Other)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
 
-  let setAreOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
+  let setAreOneClickWalletsRendered = Jotai.useSetAtom(areOneClickWalletsRendered)
+
+  let (isButtonSettled, setIsButtonSettled) = React.useState(_ => false)
+  ReadyHooks.usePendingWhile(
+    ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,
+    !isButtonSettled && status !== "error",
+  )
 
   let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
@@ -76,6 +82,11 @@ let make = (~sessionObj: SessionsType.token) => {
           theme: options.wallets.style.theme == Dark ? "default" : "outlined",
           shape: "default",
           on_click: authorize => {
+            LoggerUtils.logConfirmTriggered(
+              ~logger=loggerState,
+              ~source=Wallet,
+              ~paymentMethodType,
+            )
             if isTestMode {
               Console.warn("Klarna SDK button clicked in test mode - interaction disabled")
               loggerState.setLogInfo(
@@ -104,7 +115,7 @@ let make = (~sessionObj: SessionsType.token) => {
                 ~isOneClickWallet=true,
               )
               emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
-              makeOneClickHandlerPromise(sdkHandleIsThere)->then(
+              makeOneClickHandlerPromise(sdkHandleIsThere, ~parentOrigin=parentURL)->then(
                 result => {
                   let result = result->JSON.Decode.bool->Option.getOr(false)
                   if result {
@@ -164,6 +175,7 @@ let make = (~sessionObj: SessionsType.token) => {
           },
         },
         _ => {
+          setIsButtonSettled(_ => true)
           setAreOneClickWalletsRendered(
             prev => {
               ...prev,

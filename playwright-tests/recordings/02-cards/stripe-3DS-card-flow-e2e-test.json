@@ -1,0 +1,130 @@
+{
+  "_source": "synthetic",
+  "_note": "stripe-3DS-card-flow-e2e-test: Stripe 3DS. confirm (only for intents created with authentication_type three_ds) returns requires_customer_action + next_action.redirect_to_url on the router's /payments/redirect endpoint, like the real router. That endpoint is answered with an auto-submitting GET form to hooks.stripe.com/3d_secure_2/hosted (modelled on the router's RedirectForm::Form page). The Stripe page is a stand-in with the same frame structure as Stripe's test-mode challenge (hosted page > iframe __privateStripeFrame* > iframe #challengeFrame > buttons #test-source-authorize-3ds / #test-source-fail-3ds). Each button submits to the router's /payments/:id/:merchant/redirect/response/stripe (hermetic_outcome tells the two apart), which moves the hermetic intent to succeeded / failed and sends the browser to return_url?status=... (confirm stores the SDK's return_url on the intent, as the router does), as the router does after Stripe returns.",
+  "routes": [
+    {
+      "name": "confirm",
+      "method": "POST",
+      "path": "/payments/:paymentId/confirm",
+      "status": 200,
+      "intentPatch": {
+        "status": "{{response.status}}",
+        "return_url": "{{request.body.return_url}}"
+      },
+      "body": {
+        "payment_id": "{{intent.payment_id}}",
+        "merchant_id": "{{merchant_id}}",
+        "status": "requires_customer_action",
+        "amount": "{{intent.amount}}",
+        "net_amount": "{{intent.amount}}",
+        "amount_capturable": "{{intent.amount}}",
+        "amount_received": null,
+        "connector": "stripe",
+        "client_secret": "{{intent.client_secret}}",
+        "created": "{{intent.created}}",
+        "currency": "{{intent.currency}}",
+        "customer_id": "{{intent.customer_id}}",
+        "description": "{{intent.description}}",
+        "capture_method": "{{intent.capture_method}}",
+        "payment_method": "card",
+        "payment_method_type": "credit",
+        "payment_method_data": {
+          "card": {
+            "last4": "3220",
+            "card_type": "CREDIT",
+            "card_network": "Visa",
+            "card_issuer": null,
+            "card_issuing_country": "UNITEDSTATES",
+            "card_isin": "400000",
+            "card_exp_month": "12",
+            "card_exp_year": "30",
+            "card_holder_name": null
+          },
+          "billing": null
+        },
+        "authentication_type": "three_ds",
+        "next_action": {
+          "type": "redirect_to_url",
+          "redirect_to_url": "{{api_url}}/payments/redirect/{{intent.payment_id}}/{{merchant_id}}/{{intent.payment_id}}_1"
+        },
+        "manual_retry_allowed": false,
+        "connector_transaction_id": "pi_hermetic_synthetic",
+        "error_code": null,
+        "error_message": null,
+        "profile_id": "{{intent.profile_id}}",
+        "billing": "{{intent.billing}}",
+        "shipping": "{{intent.shipping}}",
+        "email": "{{intent.email}}"
+      },
+      "match": {
+        "intent": {
+          "authentication_type": "three_ds"
+        }
+      }
+    },
+    {
+      "name": "paymentRedirect",
+      "method": "GET",
+      "path": "/payments/redirect/:paymentId/:merchantId/:attemptId",
+      "status": 200,
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>Redirecting</title></head><body><form id=\"payment_form\" method=\"GET\" action=\"https://hooks.stripe.com/3d_secure_2/hosted\"><input type=\"hidden\" name=\"merchant\" value=\"acct_hermetic\"><input type=\"hidden\" name=\"payment_intent\" value=\"pi_hermetic_synthetic\"><input type=\"hidden\" name=\"payment_intent_client_secret\" value=\"pi_hermetic_synthetic_secret_redacted\"><input type=\"hidden\" name=\"publishable_key\" value=\"pk_test_redacted\"><input type=\"hidden\" name=\"source\" value=\"payatt_hermetic\"></form><script>document.getElementById(\"payment_form\").submit();</script></body></html>"
+    },
+    {
+      "name": "stripe3dsHostedPage",
+      "method": "GET",
+      "url": "https://hooks.stripe.com/3d_secure_2/hosted**",
+      "status": 200,
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>3D Secure (hermetic stand-in)</title></head><body><iframe name=\"__privateStripeFrame0001\" src=\"https://js.stripe.com/v3/three-ds-2-challenge-hermetic.html\" style=\"width:500px;height:600px;border:0\"></iframe></body></html>"
+    },
+    {
+      "name": "stripe3dsChallengeFrame",
+      "method": "GET",
+      "url": "https://js.stripe.com/v3/three-ds-2-challenge-hermetic.html",
+      "status": 200,
+      "contentType": "text/html",
+      "body": "<!doctype html><html><body><iframe id=\"challengeFrame\" name=\"stripe-challenge-frame\" class=\"ThreeDS2-challenge\" src=\"https://testmode-acs.stripe.com/3d_secure_2_test/hermetic\" style=\"width:480px;height:560px;border:0\"></iframe></body></html>"
+    },
+    {
+      "name": "stripe3dsAcs",
+      "method": "GET",
+      "url": "https://testmode-acs.stripe.com/3d_secure_2_test/**",
+      "status": 200,
+      "contentType": "text/html",
+      "body": "<!doctype html><html><head><title>3D Secure 2 Test Page (hermetic stand-in)</title></head><body><h3>3D Secure 2 Test Page</h3><form method=\"GET\" target=\"_top\" action=\"{{api_url}}/payments/{{intent.payment_id}}/{{merchant_id}}/redirect/response/stripe\"><input type=\"hidden\" name=\"hermetic_outcome\" value=\"failed\"><button id=\"test-source-fail-3ds\" class=\"Button\" type=\"submit\">FAIL</button></form><form method=\"GET\" target=\"_top\" action=\"{{api_url}}/payments/{{intent.payment_id}}/{{merchant_id}}/redirect/response/stripe\"><input type=\"hidden\" name=\"hermetic_outcome\" value=\"succeeded\"><button id=\"test-source-authorize-3ds\" class=\"Button Button--default\" type=\"submit\">COMPLETE</button></form></body></html>"
+    },
+    {
+      "name": "stripeRedirectResponseSucceeded",
+      "method": "GET",
+      "path": "/payments/:paymentId/:merchantId/redirect/response/stripe",
+      "match": {
+        "query": {
+          "hermetic_outcome": "succeeded"
+        }
+      },
+      "status": 200,
+      "contentType": "text/html",
+      "intentPatch": {
+        "status": "succeeded"
+      },
+      "body": "<!doctype html><html><head><title>Redirecting (hermetic stand-in)</title></head><body><script>location.replace(\"{{intent.return_url}}?status=succeeded&payment_id={{intent.payment_id}}&payment_intent_client_secret={{intent.client_secret}}\");</script></body></html>"
+    },
+    {
+      "name": "stripeRedirectResponseFailed",
+      "method": "GET",
+      "path": "/payments/:paymentId/:merchantId/redirect/response/stripe",
+      "match": {
+        "query": {
+          "hermetic_outcome": "failed"
+        }
+      },
+      "status": 200,
+      "contentType": "text/html",
+      "intentPatch": {
+        "status": "failed"
+      },
+      "body": "<!doctype html><html><head><title>Redirecting (hermetic stand-in)</title></head><body><script>location.replace(\"{{intent.return_url}}?status=failed&payment_id={{intent.payment_id}}&payment_intent_client_secret={{intent.client_secret}}\");</script></body></html>"
+    }
+  ]
+}

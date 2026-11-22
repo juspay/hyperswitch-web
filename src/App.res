@@ -4,14 +4,23 @@ let make = () => {
 
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
-  let setLoggerState = Recoil.useSetRecoilState(RecoilAtoms.loggerAtom)
+  let setLoggerState = Jotai.useSetAtom(JotaiAtoms.loggerAtom)
 
   let paymentMode = getQueryParamsDictforKey(url.search, "componentName")
   let paymentType = paymentMode->CardThemeType.getPaymentMode
 
   let networkStatus = NetworkInformation.useNetworkInformation()
+  let sdkSessionIdFromUrl = getQueryParamsDictforKey(url.search, "sessionId")
+  let publishableKeyFromUrl = getQueryParamsDictforKey(url.search, "publishableKey")
   let (logger, initTimestamp) = React.useMemo0(() => {
-    (HyperLogger.make(~source=Elements(paymentType)), Date.now())
+    (
+      HyperLogger.make(
+        ~source=Elements(paymentType),
+        ~sessionId=sdkSessionIdFromUrl,
+        ~merchantId=publishableKeyFromUrl,
+      ),
+      Date.now(),
+    )
   })
 
   React.useEffect1(() => {
@@ -30,13 +39,22 @@ let make = () => {
 
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
 
+  switch getQueryParamsDictforKey(url.search, "endpoint") {
+  | "" => ()
+  | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+  }
+
   React.useEffect(() => {
     setLoggerState(_ => logger)
     None
   }, [logger])
 
+  let isParentMessage = PaymentMessageHooks.useParentMessageCheck(~isInitialization=dict =>
+    dict->Utils.getDictIsSome("paymentElementCreate") ||
+      dict->Utils.getBool("fullScreenIframeMounted", false)
+  )
   React.useEffect0(() => {
-    let handleMetaDataPostMessage = (ev: Window.event) => {
+    let processMetaDataPostMessage = (ev: Window.event) => {
       let json = ev.data->Utils.safeParse
       let dict = json->Utils.getDictFromJson
 
@@ -75,13 +93,13 @@ let make = () => {
 
       switch appearanceJson {
       | Some(appearanceJson) =>
-        let colorScheme =
-          appearanceJson
-          ->Utils.getDictFromJson
-          ->Utils.getString("colorScheme", "light")
-          ->CardTheme.getColorScheme
-        CardTheme.setColorSchemeMeta(colorScheme)
+        appearanceJson->CardTheme.getColorSchemeFromAppearance->CardTheme.setColorSchemeMeta
       | None => ()
+      }
+    }
+    let handleMetaDataPostMessage = (ev: Window.event) => {
+      if isParentMessage(ev) {
+        processMetaDataPostMessage(ev)
       }
     }
     Window.addEventListener("message", handleMetaDataPostMessage)
@@ -97,6 +115,10 @@ let make = () => {
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
       <PaymentMethodsSDK />
     </LoaderController>
+  | "cardFormCoordinator" =>
+    <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
+      <CardFormCoordinator />
+    </LoaderController>
   | _ =>
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
@@ -107,17 +129,15 @@ let make = () => {
       <div id="fullscreen">
         <FullScreenDivDriver />
       </div>
-    | "qrData" => <QRCodeDisplay />
+    | "qrData" => <QRCodeDisplay logger />
     | "3dsAuth" => <ThreeDSAuth />
     | "redsys3ds" => <Redsys3ds />
     | "3ds" => <ThreeDSMethod />
-    | "voucherData" => <VoucherDisplay />
-    | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
+    | "voucherData" => <VoucherDisplay logger />
+    | "3dsRedirectionPopup" => <ThreeDSRedirectionModal logger />
     | "preMountLoader" => {
         let sdkAuthorization = getQueryParamsDictforKey(url.search, "sdkAuthorization")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
-        let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
-        let publishableKey = getQueryParamsDictforKey(url.search, "publishableKey")
         let endpoint = getQueryParamsDictforKey(url.search, "endpoint")
         let pmSessionId = getQueryParamsDictforKey(url.search, "pmSessionId")
         let hyperComponentName =
@@ -132,8 +152,8 @@ let make = () => {
           getQueryParamsDictforKey(url.search, "isSdkParamsEnabled") === "true"
 
         <PreMountLoader
-          publishableKey
-          sessionId
+          publishableKey=publishableKeyFromUrl
+          sessionId=sdkSessionIdFromUrl
           sdkAuthorization
           clientSecret
           endpoint

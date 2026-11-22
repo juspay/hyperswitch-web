@@ -1,13 +1,13 @@
-open RecoilAtoms
+open JotaiAtoms
 open PaymentType
 open Utils
 
 @react.component
 let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) => {
-  let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {config, localeString} = Jotai.useAtomValue(configAtom)
+  let {fields} = Jotai.useAtomValue(optionAtom)
 
-  let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
+  let (billingName, setBillingName) = Jotai.useAtom(userBillingName)
 
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
@@ -55,7 +55,7 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
       }
     }
   }, [billingName])
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField

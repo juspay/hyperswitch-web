@@ -3,7 +3,7 @@
 module Loader = {
   @react.component
   let make = () => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     <div className="w-8 h-8 animate-spin" style={color: themeObj.colorTextSecondary}>
       <Icon size=32 name="loader" />
     </div>
@@ -11,15 +11,16 @@ module Loader = {
 }
 @react.component
 let make = (~onClickHandler=?, ~label=?) => {
-  open RecoilAtoms
+  open JotaiAtoms
   open Utils
   open PaymentTypeContext
   let (showLoader, setShowLoader) = React.useState(() => false)
   let (isPayNowButtonDisable, setIsPayNowButtonDisable) = React.useState(() => false)
-  let {themeObj, localeString} = configAtom->Recoil.useRecoilValueFromAtom
-  let {sdkHandleConfirmPayment} = optionAtom->Recoil.useRecoilValueFromAtom
+  let {themeObj, localeString} = configAtom->Jotai.useAtomValue
+  let {sdkHandleConfirmPayment} = optionAtom->Jotai.useAtomValue
+  let {parentURL} = keys->Jotai.useAtomValue
 
-  let {sdkHandleSavePayment} = optionAtom->Recoil.useRecoilValueFromAtom
+  let {sdkHandleSavePayment} = optionAtom->Jotai.useAtomValue
   let paymentType = usePaymentType()
 
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
@@ -33,15 +34,17 @@ let make = (~onClickHandler=?, ~label=?) => {
   }
 
   let handleMessage = (event: Types.event) => {
-    let json = event.data->Identity.anyTypeToJson->getStringFromJson("")->safeParse
-    let dict = json->getDictFromJson
-    switch dict->Dict.get("submitSuccessful") {
-    | Some(submitSuccessfulVal) =>
-      if !(submitSuccessfulVal->JSON.Decode.bool->Option.getOr(false)) {
-        setIsPayNowButtonDisable(_ => false)
-        setShowLoader(_ => false)
+    if isParentMessage(~parentOrigin=parentURL, event->eventToWindowEvent) {
+      let json = event.data->Identity.anyTypeToJson->getStringFromJson("")->safeParse
+      let dict = json->getDictFromJson
+      switch dict->Dict.get("submitSuccessful") {
+      | Some(submitSuccessfulVal) =>
+        if !(submitSuccessfulVal->JSON.Decode.bool->Option.getOr(false)) {
+          setIsPayNowButtonDisable(_ => false)
+          setShowLoader(_ => false)
+        }
+      | None => ()
       }
-    | None => ()
     }
   }
 
@@ -72,14 +75,16 @@ let make = (~onClickHandler=?, ~label=?) => {
         opacity: {isPayNowButtonDisable ? "0.6" : "1"},
         width: themeObj.buttonWidth,
         border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
-      }>
+      }
+    >
       <span
         id="button-text"
         style={
           color: themeObj.buttonTextColor,
           fontSize: themeObj.buttonTextFontSize,
           fontWeight: themeObj.buttonTextFontWeight,
-        }>
+        }
+      >
         {if showLoader {
           <Loader />
         } else {

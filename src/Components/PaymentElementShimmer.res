@@ -1,6 +1,7 @@
 module Shimmer = {
   @react.component
-  let make = (~children, ~classname="") => {
+  let make = (~children, ~classname="", ~pendingTimeoutMs=?) => {
+    ReadyHooks.usePendingWhile(~timeoutMs=?pendingTimeoutMs, true)
     <div
       className={`relative
       ${classname}
@@ -33,7 +34,7 @@ module SavedPaymentShimmer = {
 module SavedPaymentCardShimmer = {
   @react.component
   let make = () => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
     <div
       className="Label flex flex-row gap-3 items-end cursor-pointer"
       style={

@@ -16,6 +16,7 @@ const localhostSources = [
   "http://localhost:8207",
   "http://localhost:3103",
   "http://localhost:5252",
+  "http://localhost:9060",
   "http://127.0.0.1:8080",
   "http://127.0.0.1:8207",
   "http://127.0.0.1:3103",
@@ -104,11 +105,11 @@ const authorizedConnectSources = [
   "https://dev.hyperswitch.io",
   "https://beta.hyperswitch.io",
   "https://live.hyperswitch.io",
+  "https://api.hyperswitch.io",
   "https://integ.hyperswitch.io",
   "https://integ-api.hyperswitch.io",
   "https://app.hyperswitch.io",
   "https://sandbox.hyperswitch.io",
-  "https://api.hyperswitch.io",
   "https://www.google.com/pay",
   "https://pay.google.com",
   "https://google.com/pay",
@@ -122,6 +123,11 @@ const authorizedConnectSources = [
   "https://eu.klarnaevt.com",
   "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
   "https://vgs-collect-keeper.apps.verygood.systems/vgs",
+  // VGS edge endpoints — where vault.submit() POSTs (Hyperswitch iframe flow).
+  // Covers both {vaultId}.sandbox.verygoodvault.com and {vaultId}.live.verygoodvault.com.
+  // The direct-injection flow runs in the merchant page, so merchants must
+  // whitelist VGS in their own CSP as well.
+  "https://*.verygoodvault.com",
   "https://eu.playground.klarnaevt.com",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
@@ -242,24 +248,29 @@ module.exports = (publicPath = "auto") => {
       "./src/hyper-loader/AuthenticationSessionMethods.bs.js",
   };
 
-  const definePluginValues = {
-    repoName: JSON.stringify(repoName),
-    repoVersion: JSON.stringify(repoVersion),
-    publicPath: JSON.stringify(repoPublicPath),
-    sdkUrl: JSON.stringify(sdkUrl),
-    backendEndPoint: JSON.stringify(backendEndPoint),
-    confirmEndPoint: JSON.stringify(confirmEndPoint),
-    logEndpoint: JSON.stringify(logEndpoint),
-    sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
-    sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
+  const globalVars = {
+    repoName,
+    repoVersion,
+    publicPath: repoPublicPath,
+    sdkUrl,
+    backendEndPoint,
+    confirmEndPoint,
+    logEndpoint,
+    sentryDSN: process.env.SENTRY_DSN,
+    sentryScriptUrl: process.env.SENTRY_SCRIPT_URL,
     enableLogging: ENABLE_LOGGING,
-    loggingLevel: JSON.stringify(loggingLevel),
-    maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
+    loggingLevel,
+    maxLogsPushedPerEventName,
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
     isLocal,
     isPciCompliant,
+  };
+
+  const definePluginValues = {
+    __SDK_CONFIG__: JSON.stringify(globalVars),
+    publicPath: JSON.stringify(repoPublicPath),
     visaAPIKeyId: JSON.stringify(visaAPIKeyId),
     visaAPICertificatePem: JSON.stringify(visaAPICertificatePem),
   };
@@ -353,9 +364,6 @@ module.exports = (publicPath = "auto") => {
         url: process.env.SENTRY_URL,
         release: {
           name: "0.3",
-          uploadLegacySourcemaps: {
-            paths: ["dist"],
-          },
         },
       })
     );

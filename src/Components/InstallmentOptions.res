@@ -7,8 +7,8 @@ let make = (
   ~errorString,
   ~setErrorString,
 ) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
 
   let installmentOptions = paymentMethodListValue.intent_data.installment_options->Option.getOr([])
   let currency = paymentMethodListValue.intent_data.currency

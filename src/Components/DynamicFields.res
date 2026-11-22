@@ -1,7 +1,7 @@
 module DynamicFieldsToRenderWrapper = {
   @react.component
   let make = (~children, ~index, ~isInside=true) => {
-    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
     <RenderIf condition={children != React.null}>
       <div
@@ -9,7 +9,8 @@ module DynamicFieldsToRenderWrapper = {
         className="flex flex-col w-full place-content-between"
         style={
           gridColumnGap: isInside ? "0px" : themeObj.spacingGridRow,
-        }>
+        }
+      >
         {children}
       </div>
     </RenderIf>
@@ -34,11 +35,11 @@ module FormBody = {
     ~syncEmitAddressAtoms,
   ) => {
     open DynamicFieldsUtils
-    open RecoilAtoms
+    open JotaiAtoms
 
-    let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-    let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
-    let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
+    let {config, themeObj, localeString} = Jotai.useAtomValue(configAtom)
+    let setAreRequiredFieldsValid = Jotai.useSetAtom(areRequiredFieldsValid)
+    let setAreRequiredFieldsEmpty = Jotai.useSetAtom(areRequiredFieldsEmpty)
 
     let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
     let isRenderDynamicFieldsInsideBilling = dynamicFieldsInsideBilling->Array.length > 0
@@ -84,7 +85,8 @@ module FormBody = {
       ->DynamicFieldInput.groupFieldsByRow
       ->Array.mapWithIndex((row, rowIdx) => {
         <DynamicFieldsToRenderWrapper
-          key={`outside-row-${rowIdx->Int.toString}`} index={rowIdx} isInside={false}>
+          key={`outside-row-${rowIdx->Int.toString}`} index={rowIdx} isInside={false}
+        >
           <DynamicFieldInput.makeRow
             items={row}
             allFields={dynamicFieldsOutsideBilling}
@@ -101,26 +103,30 @@ module FormBody = {
           style={
             border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
             borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
-          }>
+          }
+        >
           <div
             className="billing-details-text"
             style={
               marginBottom: "5px",
               fontSize: themeObj.fontSizeLg,
               opacity: "0.6",
-            }>
+            }
+          >
             {React.string(localeString.billingDetailsText)}
           </div>
           <div
             className="flex flex-col"
             style={
               gap: isSpacedInnerLayout ? themeObj.spacingGridRow : "",
-            }>
+            }
+          >
             {dynamicFieldsInsideBilling
             ->DynamicFieldInput.groupFieldsByRow
             ->Array.mapWithIndex((row, rowIdx) => {
               <DynamicFieldsToRenderWrapper
-                key={`inside-row-${rowIdx->Int.toString}`} index={rowIdx}>
+                key={`inside-row-${rowIdx->Int.toString}`} index={rowIdx}
+              >
                 <DynamicFieldInput.makeRow
                   items={row}
                   allFields={dynamicFieldsInsideBilling}
@@ -145,9 +151,6 @@ let make = (
   ~setRequiredFieldsBody,
   ~isSavedCardFlow=false,
   ~savedMethod=PaymentType.defaultCustomerMethods,
-  ~cardProps=None,
-  ~expiryProps=None,
-  ~cvcProps=None,
   ~isBancontact=false,
   ~isSaveDetailsWithClickToPay=false,
   ~isDisableInfoElement=false,
@@ -155,12 +158,12 @@ let make = (
 ) => {
   open DynamicFieldsUtils
   open Utils
-  open RecoilAtoms
+  open JotaiAtoms
   open SuperpositionTypes
 
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {billingAddress, redirectionInfo, defaultValues} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let {localeString} = Jotai.useAtomValue(configAtom)
+  let {billingAddress, redirectionInfo, defaultValues} = Jotai.useAtomValue(optionAtom)
   let syncEmitAddressAtoms = DynamicFieldsUtils.useSyncEmitAddressAtoms()
 
   let intentData = paymentMethodListValue.intent_data.intentDataObject
@@ -262,7 +265,13 @@ let make = (
     }
   }, [formRef])
 
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
+
+  let saveDetailsCheckbox = CustomPaymentMethodsConfig.useSaveDetailsCheckbox(
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+  let isShowSaveDetailsCheckbox = !isSavedCardFlow && saveDetailsCheckbox.isShow
 
   let bottomElement = <InfoElement />
   let isInfoElementPresent = React.useMemo(() => {
@@ -280,8 +289,8 @@ let make = (
   let hasAnyField = missingRequiredFieldsFiltered->Array.length > 0
   let shouldRenderForm =
     hasAnyField || initialValuesWithBillingDataOverride->Dict.keysToArray->Array.length > 0
-  let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
-  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
+  let setAreRequiredFieldsValid = Jotai.useSetAtom(areRequiredFieldsValid)
+  let setAreRequiredFieldsEmpty = Jotai.useSetAtom(areRequiredFieldsEmpty)
 
   React.useEffect(() => {
     if isSavedCardFlow || !hasAnyField {
@@ -333,12 +342,28 @@ let make = (
     <RenderIf condition={!isSavedCardFlow && (hasAnyField || isInfoElementPresent)}>
       <Surcharge paymentMethod paymentMethodType />
     </RenderIf>
+    // Fields to collect: checkbox sits right below them, info element in a block after.
+    <RenderIf condition={hasAnyField && isShowSaveDetailsCheckbox}>
+      <SaveDetailsCheckbox
+        isChecked={saveDetailsCheckbox.isChecked}
+        setIsChecked={saveDetailsCheckbox.setIsChecked}
+        paymentMethod
+        paymentMethodType
+        acceptance=?{saveDetailsCheckbox.acceptance}
+      />
+    </RenderIf>
     <RenderIf condition={isRenderInfoElement}>
-      {if missingRequiredFieldsFiltered->Array.length >= 1 {
-        bottomElement
-      } else {
-        <Block bottomElement />
-      }}
+      {!hasAnyField || isShowSaveDetailsCheckbox ? <Block bottomElement /> : bottomElement}
+    </RenderIf>
+    // No fields to collect: info element block first, checkbox below it.
+    <RenderIf condition={!hasAnyField && isShowSaveDetailsCheckbox}>
+      <SaveDetailsCheckbox
+        isChecked={saveDetailsCheckbox.isChecked}
+        setIsChecked={saveDetailsCheckbox.setIsChecked}
+        paymentMethod
+        paymentMethodType
+        acceptance=?{saveDetailsCheckbox.acceptance}
+      />
     </RenderIf>
   </>
 }

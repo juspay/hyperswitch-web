@@ -2,21 +2,34 @@ open Utils
 type customEvent = {openurl_if_required: string}
 
 @react.component
-let make = () => {
+let make = (~logger: HyperLoggerTypes.loggerMake) => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (popupUrl, setPopupUrl) = React.useState(_ => "")
   let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
+  let (paymentMethodFlowCancelMetadata, setPaymentMethodFlowCancelMetadata) = React.useState(_ =>
+    Dict.make()
+  )
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let eventsToSendToParent = ["openurl_if_required"]
-  eventsToSendToParent->UtilityHooks.useSendEventsToParent
+  let isTrustedChild = (ev: Window.event) =>
+    [popupUrl, redirectResponseUrl]
+    ->Array.filterMap(PaymentMessageSecurity.originOf)
+    ->Array.includes(ev.origin) &&
+      Window.querySelector("#threeDsRedirectFrame")
+      ->Nullable.toOption
+      ->Option.map(iframe => ev.source === iframe->Window.contentWindow)
+      ->Option.getOr(false)
+  eventsToSendToParent->UtilityHooks.useSendEventsToParent(~isTrustedChild)
 
   let handleOnClose = () =>
     if redirectResponseUrl == "" {
-      messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
+      closePaymentLoaderIfAny()
     } else {
+      // Emitted before openurl_if_required so the merchant's handler runs before the redirect.
+      SubscriptionEventHooks.emitFullscreenPaymentMethodFlowCancel(~paymentMethodFlowCancelMetadata)
       let customEvent =
         {
           openurl_if_required: redirectResponseUrl,
@@ -33,19 +46,24 @@ let make = () => {
       try {
         let json = ev.data->safeParse
         let dict = json->getDictFromJson
-        if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+        if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
           let metadata = dict->getJsonObjectFromDict("metadata")
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+          logger.setSdkAuthorization(metaDataDict->getString("sdkAuthorization", ""))
+          logger.setMerchantId(metaDataDict->getString("publishableKey", ""))
           let popupUrl = metaDataDict->getString("popupUrl", "")
           let redirectResponseUrl = metaDataDict->getString("redirectResponseUrl", "")
           setPopupUrl(_ => popupUrl)
           setRedirectResponseUrl(_ => redirectResponseUrl)
+          setPaymentMethodFlowCancelMetadata(_ =>
+            metaDataDict->getDictFromDict("paymentMethodFlowCancel")
+          )
           setloader(_ => false)
         }
       } catch {
       | err => {
           let exceptionMessage = err->formatException->JSON.stringify
-          loggerState.setLogError(~value=exceptionMessage, ~eventName=THREE_DS_POPUP_REDIRECTION)
+          logger.setLogError(~value=exceptionMessage, ~eventName=THREE_DS_POPUP_REDIRECTION)
           postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
         }
       }
@@ -55,7 +73,7 @@ let make = () => {
   })
   <Modal loader openModal setOpenModal closeCallback=handleOnClose>
     <div className="w-full h-[500px] bg-white">
-      <iframe className="w-full h-full" src={popupUrl} />
+      <iframe id="threeDsRedirectFrame" className="w-full h-full" src={popupUrl} />
     </div>
   </Modal>
 }

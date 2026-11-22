@@ -1,5 +1,5 @@
 open PaymentType
-open RecoilAtoms
+open JotaiAtoms
 open Utils
 open PaymentUtils
 
@@ -11,21 +11,21 @@ let cardsToRender = (width: int) => {
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
-  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
-  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
-  let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
+  let {layout} = Jotai.useAtomValue(optionAtom)
+  let optionAtomValue = Jotai.useAtomValue(optionAtom)
+  let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
+  let (paymentManagementListValue, setPaymentManagementListValue) = Jotai.useAtom(
     paymentManagementListValue,
   )
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
 
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
+  let (selectedOption, setSelectedOption) = Jotai.useAtom(selectedOptionAtom)
   let (dropDownOptions: array<string>, setDropDownOptions) = React.useState(_ => [])
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let setShowPaymentMethodsScreen = Jotai.useSetAtom(JotaiAtoms.showPaymentMethodsScreen)
 
   let (paymentOptionsList, actualList) = PaymentUtilsV2.useGetPaymentMethodListV2(~paymentOptions)
 
@@ -98,7 +98,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
   }, [selectedOption])
 
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   React.useEffect(() => {
     setSelectedOption(prev =>
@@ -122,7 +122,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let checkoutEle = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement">
       {switch selectedOption->PaymentModeType.paymentMode {
-      | Card => <CardPayment cardProps expiryProps cvcProps />
+      | Card =>
+        <ParentCardComponent
+          cardCollectionMode="raw" flowType=CardThemeType.PaymentMethodsManagement
+        />
       | _ => React.null
       }}
     </ErrorBoundary>

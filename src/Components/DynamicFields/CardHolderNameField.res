@@ -3,7 +3,7 @@ open SuperpositionTypes
 module FullNameFieldInput = {
   @react.component
   let make = (~firstNameFieldConfig: fieldConfig, ~lastNameFieldConfig: fieldConfig) => {
-    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
     let firstValidator = DynamicFieldsUtils.resolveValidator(
       ~field=firstNameFieldConfig,

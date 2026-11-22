@@ -6,10 +6,10 @@ open PaymentEventTypes
 // ---------------------------------------------------------------------------
 // Call once at the top of any component that needs to emit events imperatively
 // (e.g. inside event handlers or callbacks, not in effects).
-// Reads subscriptionEvents from Recoil — no prop drilling required.
+// Reads subscriptionEvents from Jotai — no prop drilling required.
 
 type emitter = {
-  emitCardInfo: (~cardInfo: PaymentEventData.cardInfo) => unit,
+  emitCardInfo: (~elementType: string=?, ~cardInfo: PaymentEventData.cardInfo) => unit,
   emitPaymentMethodStatus: (
     ~paymentMethod: string,
     ~paymentMethodType: string,
@@ -21,20 +21,33 @@ type emitter = {
   emitSurcharge: (
     ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
   ) => unit,
+  emitOffers: (~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>) => unit,
+  emitPaymentMethodFlowCancel: (
+    ~paymentMethod: string,
+    ~paymentMethodType: string,
+    ~canRetryPayment: bool,
+  ) => unit,
 }
 
 let useSubscriptionEventEmitter = (): emitter => {
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
+  // The iframe's own element type (e.g. payPal, expressCheckout), so the loader routes
+  // emitted events to that element's listeners.
+  let url = RescriptReactRouter.useUrl()
+  let componentName = switch CardUtils.getQueryParamsDictforKey(url.search, "componentName") {
+  | "" => "payment"
+  | name => name
+  }
 
-  let emitCardInfo = (~cardInfo: PaymentEventData.cardInfo) => {
+  let emitCardInfo = (~elementType: string="payment", ~cardInfo: PaymentEventData.cardInfo) => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentMethodInfoCard,
+        ~eventType=CardDetailsChange,
       )
     ) {
-      Utils.messageParentWindow(createCardInfoPayload(cardInfo))
+      Utils.messageParentWindow(createCardInfoPayload(~elementType, cardInfo))
     }
   }
 
@@ -47,7 +60,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentMethodStatus,
+        ~eventType=PaymentMethodChange,
       )
     ) {
       Utils.messageParentWindow(
@@ -65,7 +78,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentMethodInfoBillingAddress,
+        ~eventType=BillingDetailsChange,
       )
     ) {
       Utils.messageParentWindow(createBillingAddressPayload(~country, ~state, ~postalCode))
@@ -76,7 +89,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=CvcStatus,
+        ~eventType=CvcStatusChange,
       )
     ) {
       Utils.messageParentWindow(createCvcStatusPayload(~iframeId, ~isCvcEmpty, ~isCvcComplete))
@@ -87,7 +100,7 @@ let useSubscriptionEventEmitter = (): emitter => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Surcharge,
+        ~eventType=SurchargeInfo,
       ) &&
       surchargeDetails->Option.isSome
     ) {
@@ -95,61 +108,165 @@ let useSubscriptionEventEmitter = (): emitter => {
     }
   }
 
-  {emitCardInfo, emitPaymentMethodStatus, emitBillingAddress, emitCvcStatus, emitSurcharge}
+  let emitOffers = (~offerDetails) => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=AppliedOffersInfo,
+      ) &&
+      offerDetails->Option.isSome
+    ) {
+      Utils.messageParentWindow(createAppliedOffersPayload(~offerDetails))
+    }
+  }
+
+  let emitPaymentMethodFlowCancel = (~paymentMethod, ~paymentMethodType, ~canRetryPayment) => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=PaymentMethodFlowCancel,
+      )
+    ) {
+      Utils.messageParentWindow(
+        createPaymentMethodFlowCancelPayload(
+          ~elementType=componentName,
+          ~paymentMethod,
+          ~paymentMethodType,
+          ~canRetryPayment,
+        ),
+      )
+    }
+  }
+
+  {
+    emitCardInfo,
+    emitPaymentMethodStatus,
+    emitBillingAddress,
+    emitCvcStatus,
+    emitSurcharge,
+    emitOffers,
+    emitPaymentMethodFlowCancel,
+  }
 }
+
+// ---------------------------------------------------------------------------
+// emitFullscreenPaymentMethodFlowCancel
+// ---------------------------------------------------------------------------
+// For flows rendered in the fullscreen iframe (3DS challenge).
+// That iframe never receives the element options, so it cannot read
+// subscriptionEvents; the loader drops the event for merchants who did not subscribe.
+// paymentMethodFlowCancelMetadata is the "paymentMethodFlowCancel" dict the element iframe
+// puts in the fullscreen metadata (see PaymentHelpers.intentCall). canRetryPayment defaults
+// to the manual_retry_allowed value carried in that metadata.
+let emitFullscreenPaymentMethodFlowCancel = (
+  ~paymentMethodFlowCancelMetadata: Dict.t<JSON.t>,
+  ~canRetryPayment=paymentMethodFlowCancelMetadata->Utils.getBool("canRetryPayment", false),
+) =>
+  Utils.messageParentWindow(
+    createPaymentMethodFlowCancelPayload(
+      ~elementType=paymentMethodFlowCancelMetadata->Utils.getString("elementType", "payment"),
+      ~paymentMethod=paymentMethodFlowCancelMetadata->Utils.getString("paymentMethod", ""),
+      ~paymentMethodType=paymentMethodFlowCancelMetadata->Utils.getString("paymentMethodType", ""),
+      ~canRetryPayment,
+    ),
+  )
 
 // ---------------------------------------------------------------------------
 // emitReady
 // ---------------------------------------------------------------------------
 // Fires unconditionally so every merchant receives the ready lifecycle event
 // regardless of whether subscriptionEvents is configured.
-let emitReady = (~iframeId, ~elementType) =>
+// Remembered so the resize event can tell whether the element is ready yet.
+let isReadyEmitted = ref(false)
+let readyListeners: array<unit => unit> = []
+
+let emitReady = (~iframeId, ~elementType) => {
   Utils.messageParentWindow([
     ("ready", true->JSON.Encode.bool),
     ("elementType", elementType->JSON.Encode.string),
     ("iframeId", iframeId->JSON.Encode.string),
   ])
+  if !isReadyEmitted.contents {
+    isReadyEmitted := true
+    readyListeners->Array.forEach(listener => listener())
+  }
+}
+
+// The Payment Element sends ready once per load and once per updateIntent.
+let emitReadyOnce = (~iframeId, ~elementType) =>
+  if !isReadyEmitted.contents {
+    emitReady(~iframeId, ~elementType)
+  }
+
+let allowReadyAgain = () => isReadyEmitted := false
+
+let useIsReadyEmitted = () => {
+  let (isReady, setIsReady) = React.useState(_ => isReadyEmitted.contents)
+  React.useEffect0(() => {
+    let listener = () => setIsReady(_ => true)
+    if isReadyEmitted.contents {
+      listener()
+      None
+    } else {
+      readyListeners->Array.push(listener)->ignore
+      Some(
+        () => {
+          let index = readyListeners->Array.indexOf(listener)
+          if index >= 0 {
+            readyListeners->Array.splice(~start=index, ~remove=1, ~insert=[])
+          }
+        },
+      )
+    }
+  })
+  isReady
+}
 
 // ---------------------------------------------------------------------------
 // useEmitFormStatus
 // ---------------------------------------------------------------------------
-// Effect hook: emits formStatus whenever empty/complete/isOneClickWallet changes.
-let useEmitFormStatus = (~empty: bool, ~complete: bool, ~isOneClickWallet: bool=false) => {
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+// Effect hook: emits formStatusChange whenever empty/complete/isOneClickWallet changes.
+let useEmitFormStatus = (
+  ~empty: bool,
+  ~complete: bool,
+  ~isOneClickWallet: bool=false,
+  ~enabled=true,
+) => {
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
-    if !isOneClickWallet {
+    if enabled && !isOneClickWallet {
       let formStatusValue = PaymentEventData.computeFormStatus(~isComplete=complete, ~isEmpty=empty)
       if (
         PaymentEventData.shouldEmitEvent(
           ~subscribedEvents=subscribedEvents->Option.getOr([]),
-          ~eventType=FormStatus,
+          ~eventType=FormStatusChange,
         )
       ) {
         Utils.messageParentWindow(createFormStatusPayload(~status=formStatusValue))
       }
     }
     None
-  }, (empty, complete, isOneClickWallet, subscribedEvents))
+  }, (empty, complete, isOneClickWallet, subscribedEvents, enabled))
 }
 
 // ---------------------------------------------------------------------------
 // useEmitBillingAddress
 // ---------------------------------------------------------------------------
-// Effect hook: emits paymentMethodInfoBillingAddress whenever address atoms change.
+// Effect hook: emits billingDetailsChange whenever address atoms change.
 let useEmitBillingAddress = () => {
-  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
-  let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState).value
-  let pinCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode).value
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let country = Jotai.useAtomValue(JotaiAtoms.userCountry)
+  let state = Jotai.useAtomValue(JotaiAtoms.userAddressState).value
+  let pinCode = Jotai.useAtomValue(JotaiAtoms.userAddressPincode).value
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentMethodInfoBillingAddress,
+        ~eventType=BillingDetailsChange,
       )
     ) {
       Utils.messageParentWindow(createBillingAddressPayload(~country, ~state, ~postalCode=pinCode))
@@ -196,22 +313,22 @@ let getPaymentMethodAndType = (
 // ---------------------------------------------------------------------------
 // useEmitPaymentMethodStatus
 // ---------------------------------------------------------------------------
-// Effect hook: emits paymentMethodStatus when the selected payment method changes.
+// Effect hook: emits paymentMethodChange when the selected payment method changes.
 let useEmitPaymentMethodStatus = (
   ~paymentMethodName: string,
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
   ~isSavedPaymentMethod: bool,
   ~isOneClickWallet: bool,
 ) => {
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=PaymentMethodStatus,
+        ~eventType=PaymentMethodChange,
       )
     ) {
       switch getPaymentMethodAndType(~paymentMethodName, ~paymentMethods, ~logger=loggerState) {
@@ -234,19 +351,19 @@ let useEmitPaymentMethodStatus = (
 // ---------------------------------------------------------------------------
 // useEmitSurchargeInfo
 // ---------------------------------------------------------------------------
-// Effect hook: emits surcharge when the eligibility surcharge details change.
+// Effect hook: emits surchargeInfo when the eligibility surcharge details change.
 // Pass the surcharge details option from the component's React state.
 let useEmitSurchargeInfo = (
   ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
 ) => {
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let subscribedEvents = options.subscriptionEvents
 
   React.useEffect(() => {
     if (
       PaymentEventData.shouldEmitEvent(
         ~subscribedEvents=subscribedEvents->Option.getOr([]),
-        ~eventType=Surcharge,
+        ~eventType=SurchargeInfo,
       ) &&
       surchargeDetails->Option.isSome
     ) {
@@ -254,4 +371,28 @@ let useEmitSurchargeInfo = (
     }
     None
   }, (surchargeDetails, subscribedEvents))
+}
+
+// ---------------------------------------------------------------------------
+// useEmitAppliedOffersInfo
+// ---------------------------------------------------------------------------
+// Effect hook: emits the auto-applied offers when eligibility offer details change.
+let useEmitAppliedOffersInfo = (
+  ~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
+) => {
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let subscribedEvents = options.subscriptionEvents
+
+  React.useEffect(() => {
+    if (
+      PaymentEventData.shouldEmitEvent(
+        ~subscribedEvents=subscribedEvents->Option.getOr([]),
+        ~eventType=AppliedOffersInfo,
+      ) &&
+      offerDetails->Option.isSome
+    ) {
+      Utils.messageParentWindow(createAppliedOffersPayload(~offerDetails))
+    }
+    None
+  }, (offerDetails, subscribedEvents))
 }

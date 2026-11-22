@@ -1,6 +1,6 @@
 @react.component
 let make = (~onClick, ~icon, ~title, ~ariaLabel, ~onKeyDown, ~dataTestId=?) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
 
   <div
     className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"

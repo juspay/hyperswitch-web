@@ -45,6 +45,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: "Add credit/debit card",
   useExisitingSavedCards: "Use saved debit/credit cards",
   saveCardDetails: "Save card details",
+  savePaymentDetails: "Securely save my payment details for faster payments",
+  savePaymentDetailsWhereverPossible: "Securely save my payment details for faster payments, where available",
   addBankAccount: "Add bank account",
   achBankDebitTerms: _ =>
     `Your ACH Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.`,
@@ -71,7 +73,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
-    {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
+    {React.string(`A surcharge amount of up to${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string(`${Utils.nbsp}will be applied for this transaction`)}
   </>,
@@ -265,4 +267,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Show less",
   refreshingText: "Refreshing...",
   paymentDetailsBeingCheckedText: "Payment details are being checked. Please wait",
+  eligibleOffersText: "Eligible offers",
+  checkingEligibleOffersText: "Checking eligible offers",
+  cardOfferText: "Card offer",
+  offerAppliedText: "Applied",
 }

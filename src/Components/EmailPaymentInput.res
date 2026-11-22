@@ -1,12 +1,12 @@
-open RecoilAtoms
+open JotaiAtoms
 open Utils
 open EmailValidation
 
 @react.component
 let make = () => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
-  let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {localeString} = Jotai.useAtomValue(configAtom)
+  let (email, setEmail) = Jotai.useAtom(userEmailAddress)
+  let {fields} = Jotai.useAtomValue(optionAtom)
 
   let showDetails = PaymentType.getShowDetails(~billingDetails=fields.billingDetails)
 
@@ -51,7 +51,7 @@ let make = () => {
       }
     }
   }, [email])
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.email == Auto}>
     <PaymentField

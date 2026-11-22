@@ -23,7 +23,7 @@ let charcoal = {
   fontSizeXs: "10px",
   fontSize2Xs: "8px",
   fontSize3Xs: "6px",
-  colorSuccess: "",
+  colorSuccess: "#16875B",
   colorWarning: "",
   colorPrimaryText: "#707070",
   colorBackgroundText: "#ffffff",
@@ -49,6 +49,7 @@ let charcoal = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#E1E5EA",
+  inputFieldHeight: "48px",
 }
 
 let charcoalRules = theme =>
@@ -212,6 +213,15 @@ let charcoalRules = theme =>
       "fontSize": theme.fontSize2Xl,
       "fontWeight": theme.fontWeightMedium,
       "marginBottom": "1.5rem",
+    },
+    ".Loader--fullscreen": {
+      "backgroundColor": "rgba(0, 0, 0, 0.8)",
+      "backdropFilter": "blur(40px) contrast(1.25)",
+      "opacity": "0.7",
+    },
+    ".Loader--overlay": {
+      "backgroundColor": "rgba(240, 243, 245, 0.6)",
+      "backdropFilter": "blur(4px)",
     },
   }->Identity.anyTypeToJson
 

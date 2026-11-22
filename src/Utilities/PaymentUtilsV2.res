@@ -33,7 +33,7 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
 
 let useGetPaymentMethodListV2 = (~paymentOptions) => {
   open Utils
-  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+  let methodslist = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
 
   let resolvePaymentList = list => {
     switch list {

@@ -45,7 +45,6 @@ let cardPaymentBody = (
     ("card_exp_month", month->JSON.Encode.string),
     ("card_exp_year", year->JSON.Encode.string),
     ("card_cvc", cvcNumber->JSON.Encode.string),
-    ("card_issuer", ""->JSON.Encode.string),
   ]
 
   cardHolderName
@@ -66,6 +65,18 @@ let cardPaymentBody = (
     ),
   ]
 }
+
+let offerDetailsBody = (~offerQuoteIds) =>
+  offerQuoteIds->Array.length === 0
+    ? []
+    : [
+        (
+          "offer_details",
+          [
+            ("offer_quote_ids", offerQuoteIds->Array.map(JSON.Encode.string)->JSON.Encode.array),
+          ]->Utils.getJsonFromArrayOfJson,
+        ),
+      ]
 
 let installmentBody = (plan: option<PaymentMethodsRecord.installmentPlan>) =>
   switch plan {
@@ -126,6 +137,13 @@ let customerAcceptanceBody =
     ),
   ]->Utils.getJsonFromArrayOfJson
 
+let cardTokenCvcTuple = (~cvcNumber) => (
+  "payment_method_data",
+  [
+    ("card_token", [("card_cvc", cvcNumber->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
+  ]->Utils.getJsonFromArrayOfJson,
+)
+
 let savedCardBody = (
   ~paymentToken,
   ~customerId,
@@ -140,11 +158,11 @@ let savedCardBody = (
   ]
 
   if requiresCvv {
-    savedCardBody->Array.push(("card_cvc", cvcNumber->JSON.Encode.string))->ignore
+    savedCardBody->Array.push(cardTokenCvcTuple(~cvcNumber))
   }
 
   if isCustomerAcceptanceRequired {
-    savedCardBody->Array.push(("customer_acceptance", customerAcceptanceBody))->ignore
+    savedCardBody->Array.push(("customer_acceptance", customerAcceptanceBody))
   }
 
   savedCardBody
@@ -973,13 +991,17 @@ let vgsVaultCardBody = (~cardNumber, ~month, ~year, ~cvcNumber, ~last4Digits, ~b
   ]
 }
 
-let cardTokenizationBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {
+let cardTokenizationBody = (~cardNumber, ~month, ~year, ~cvcNumber, ~cardHolderName=None) => {
   let cardBody = [
     ("card_number", cardNumber->CardValidations.clearSpaces->JSON.Encode.string),
     ("card_exp_month", month->JSON.Encode.string),
     ("card_exp_year", year->JSON.Encode.string),
     ("card_cvc", cvcNumber->JSON.Encode.string),
   ]
+
+  cardHolderName
+  ->Option.map(name => cardBody->Array.push(("card_holder_name", name->JSON.Encode.string))->ignore)
+  ->ignore
 
   [
     ("payment_method_type", "card"->JSON.Encode.string),

@@ -24,7 +24,7 @@ let soft = {
   fontSizeXs: "10px",
   fontSize2Xs: "8px",
   fontSize3Xs: "6px",
-  colorSuccess: "",
+  colorSuccess: "#16875B",
   colorWarning: "",
   colorPrimaryText: "#000000",
   colorBackgroundText: "#ffffffe0",
@@ -50,6 +50,7 @@ let soft = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#303031",
+  inputFieldHeight: "48px",
 }
 
 let softRules = theme =>
@@ -215,6 +216,15 @@ let softRules = theme =>
       "fontSize": theme.fontSize2Xl,
       "fontWeight": theme.fontWeightMedium,
       "marginBottom": "1.5rem",
+    },
+    ".Loader--fullscreen": {
+      "backgroundColor": "rgba(60, 61, 62, 0.8)",
+      "backdropFilter": "blur(40px) contrast(1.25)",
+      "opacity": "0.7",
+    },
+    ".Loader--overlay": {
+      "backgroundColor": "rgba(60, 61, 62, 0.6)",
+      "backdropFilter": "blur(4px)",
     },
   }->Identity.anyTypeToJson
 

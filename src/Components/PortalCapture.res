@@ -1,6 +1,6 @@
 @react.component
 let make = React.memo((~name: string) => {
-  let (_, setPortalNodes) = Recoil.useRecoilState(RecoilAtoms.portalNodes)
+  let setPortalNodes = Jotai.useSetAtom(JotaiAtoms.portalNodes)
   let setDiv = React.useCallback((elem: Nullable.t<Dom.element>) => {
     setPortalNodes(
       prevDict => {
@@ -23,6 +23,7 @@ let make = React.memo((~name: string) => {
         clonedDict
       },
     )
+    None
   }, (setPortalNodes, name))
 
   <div id="sss" ref={ReactDOM.Ref.callbackDomRef(setDiv)} />

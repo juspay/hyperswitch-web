@@ -1,4 +1,4 @@
-open RecoilAtoms
+open JotaiAtoms
 open PaymentTypeContext
 
 @react.component
@@ -16,6 +16,8 @@ let make = (
   ~onFocus=?,
   ~fieldName="",
   ~isLabelHidden=false,
+  ~isErrorHidden=false,
+  ~id=?,
   ~name="",
   ~type_="text",
   ~maxLength=?,
@@ -27,10 +29,10 @@ let make = (
   ~isDisabled=false,
   ~autocomplete="on",
 ) => {
-  let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, config} = Jotai.useAtomValue(configAtom)
   let {innerLayout} = config.appearance
-  let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let {parentURL, iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {readOnly} = Jotai.useAtomValue(optionAtom)
+  let {parentURL, iframeId} = Jotai.useAtomValue(keys)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
   let elementType = contextPaymentType->CardThemeType.getPaymentModeToString
@@ -120,6 +122,7 @@ let make = (
             width: fieldWidth,
             height,
           }
+          ?id
           dataTestId={name}
           disabled={isDisabled || readOnly}
           ref={inputRef->ReactDOM.Ref.domRef}
@@ -155,7 +158,7 @@ let make = (
         {rightIcon}
       </div>
     </div>
-    <RenderIf condition={innerLayout === Spaced}>
+    <RenderIf condition={innerLayout === Spaced && !isErrorHidden}>
       {switch errorString {
       | Some(val) =>
         <RenderIf condition={val->String.length > 0}>

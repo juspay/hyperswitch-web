@@ -54,8 +54,8 @@ let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
   )
 }
 
-let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
-  messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
+let handleOnPaymentCompleteMessage = (~targetOrigin="*") => {
+  messageParentWindow([("paymentComplete", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
@@ -310,8 +310,24 @@ let handleMessage = (fun, _errorMessage) => {
   Window.addEventListener("message", handle)
   Some(() => Window.removeEventListener("message", handle))
 }
-let useSubmitPaymentData = callback => {
-  React.useEffect(() => {handleMessage(callback, "")}, [callback])
+// Nested SDK components must only accept confirm/control messages from their
+// direct host iframe. This keeps unrelated window messages from entering a
+// payment submit path while retaining the existing callback API.
+let isParentMessage = (~parentOrigin, ev: Window.event) =>
+  PaymentMessageSecurity.isExpectedSender(
+    ~source=iframeParent,
+    ~origin=parentOrigin,
+    ~eventSource=ev.source,
+    ~eventOrigin=ev.origin,
+  )
+
+let useSubmitPaymentDataFromParent = (~parentOrigin, callback) => {
+  let parentCallback = React.useCallback((ev: Window.event) => {
+    if isParentMessage(~parentOrigin, ev) {
+      callback(ev)
+    }
+  }, (callback, parentOrigin))
+  React.useEffect(() => {handleMessage(parentCallback, "")}, [parentCallback])
 }
 
 let useWindowSize = () => {
@@ -407,7 +423,11 @@ let toCamelCase = str => {
   } else {
     str
     ->String.toLowerCase
-    ->Js.String2.unsafeReplaceBy0(%re(`/([-_][a-z])/g`), (letter, _, _) => {
+    ->String.unsafeReplaceRegExpBy0(%re(`/([-_][a-z])/g`), (
+      ~match as letter,
+      ~offset as _,
+      ~input as _,
+    ) => {
       letter->String.toUpperCase
     })
     ->String.replaceRegExp(%re(`/[^a-zA-Z]/g`), "")
@@ -420,7 +440,11 @@ let toCamelCaseWithNumberSupport = str => {
   } else if str->String.includes("_") {
     str
     ->String.toLowerCase
-    ->Js.String2.unsafeReplaceBy0(%re(`/([-_][a-z])/g`), (letter, _, _) => {
+    ->String.unsafeReplaceRegExpBy0(%re(`/([-_][a-z])/g`), (
+      ~match as letter,
+      ~offset as _,
+      ~input as _,
+    ) => {
       letter->String.toUpperCase
     })
     ->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
@@ -430,9 +454,11 @@ let toCamelCaseWithNumberSupport = str => {
 }
 
 let toSnakeCase = str => {
-  str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
-    `_${letter->String.toLowerCase}`
-  )
+  str->String.unsafeReplaceRegExpBy0(%re("/[A-Z]/g"), (
+    ~match as letter,
+    ~offset as _,
+    ~input as _,
+  ) => `_${letter->String.toLowerCase}`)
 }
 type case = CamelCase | SnakeCase | KebabCase
 let rec transformKeys = (json: JSON.t, to: case) => {
@@ -545,8 +571,8 @@ let isVpaIdValid = vpaId => {
 }
 
 let checkEmailValid = (
-  email: RecoilAtomTypes.field,
-  fn: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
+  email: JotaiAtomTypes.field,
+  fn: (JotaiAtomTypes.field => JotaiAtomTypes.field) => unit,
 ) => {
   switch email.value->String.match(
     %re(
@@ -578,7 +604,7 @@ let validatePhoneNumber = (countryCode, number) => {
     ->Dict.get("countries")
     ->Option.flatMap(JSON.Decode.array)
     ->Option.getOr([])
-    ->Belt.Array.keepMap(JSON.Decode.object)
+    ->Array.filterMap(JSON.Decode.object)
 
   let filteredArr = countriesArr->Array.filter(countryObj => {
     countryObj
@@ -659,9 +685,12 @@ let constructClass = (~classname, ~dict) => {
   ->Array.map(entry => {
     let (key, value) = entry
 
+    let toKebabCaseIfNeeded = key =>
+      key->String.includes("-") ? key : key->toKebabCase
+
     let class = if !(key->String.startsWith(":")) && !(key->String.startsWith(".")) {
       switch value->JSON.Decode.string {
-      | Some(str) => `${key->toKebabCase}:${str}`
+      | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
       | None => ""
       }
     } else if key->String.startsWith(":") {
@@ -673,7 +702,7 @@ let constructClass = (~classname, ~dict) => {
           ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
-            | Some(str) => `${key->toKebabCase}:${str}`
+            | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
             | None => ""
             }
           })
@@ -690,7 +719,7 @@ let constructClass = (~classname, ~dict) => {
           ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
-            | Some(str) => `${key->toKebabCase}:${str}`
+            | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
             | None => ""
             }
           })
@@ -794,7 +823,6 @@ let validateRountingNumber = str => {
 }
 
 let handlePostMessageEvents = (
-  ~iframeId,
   ~complete,
   ~empty,
   ~paymentType,
@@ -841,31 +869,30 @@ let isoOptionsToCountryNames = (isoOptions: array<string>): array<string> =>
     ->Option.map(item => item.countryName)
   )
 
-let getStateNames = (country: RecoilAtomTypes.field) => {
-  let options =
-    CountryStateDataRefs.stateDataRef.contents
-    ->getDictFromJson
-    ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
-    ->Option.getOr([])
-
-  options->Array.reduce([], (arr, item) => {
-    arr
-    ->Array.push(
-      item
-      ->getDictFromJson
-      ->getString("value", ""),
-    )
-    ->ignore
-    arr
+/*
+ * Display names of a country's states, in the state data's own (alphabetical) order.
+ * A non-empty `allowedStateCodes` is an allowlist of state codes.
+ */
+let getStateNamesForCountry = (~countryIso, ~allowedStateCodes=[]) =>
+  CountryStateDataRefs.stateDataRef.contents
+  ->getDictFromJson
+  ->getArray(countryIso)
+  ->Array.filterMap(item => {
+    let state = item->getDictFromJson
+    let isStateCodeIncluded = allowedStateCodes->Array.includes(state->getString("code", ""))
+    let isStateAllowed = allowedStateCodes->Array.length === 0 || isStateCodeIncluded
+    isStateAllowed ? Some(state->getString("value", "")) : None
   })
-}
+
+let getStateNames = (country: JotaiAtomTypes.field) =>
+  getStateNamesForCountry(~countryIso=getCountryCode(country.value).isoAlpha2)
 
 let isAddressComplete = (
-  line1: RecoilAtomTypes.field,
-  city: RecoilAtomTypes.field,
-  postalCode: RecoilAtomTypes.field,
-  country: RecoilAtomTypes.field,
-  state: RecoilAtomTypes.field,
+  line1: JotaiAtomTypes.field,
+  city: JotaiAtomTypes.field,
+  postalCode: JotaiAtomTypes.field,
+  country: JotaiAtomTypes.field,
+  state: JotaiAtomTypes.field,
 ) =>
   line1.value != "" &&
   city.value != "" &&
@@ -901,7 +928,7 @@ let formatIBAN = iban => {
   let remaining = formatted->String.substringToEnd(~start=4)
 
   let chunks = switch remaining->String.match(%re(`/(.{1,4})/g`)) {
-  | Some(matches) => matches->Belt.Array.keepMap(x => x)
+  | Some(matches) => matches->Array.filterMap(x => x)
   | None => []
   }
 
@@ -947,9 +974,9 @@ let rgbaTorgb = bgColor => {
 }
 
 let findVersion = (re, content) => {
-  let result = Js.Re.exec_(re, content)
+  let result = RegExp.exec(re, content)
   let version = switch result {
-  | Some(val) => Js.Re.captures(val)
+  | Some(val) => val->RegExp.Result.matches
   | None => []
   }
   version
@@ -970,12 +997,9 @@ let browserDetect = content => {
   ]
 
   switch patterns
-  ->Belt.Array.keepMap(((keyword, regex, name)) =>
+  ->Array.filterMap(((keyword, regex, name)) =>
     if RegExp.test(keyword->RegExp.fromString, content) {
-      let version = switch findVersion(regex, content)
-      ->Array.get(1)
-      ->Option.getOr(Nullable.null)
-      ->Nullable.toOption {
+      let version = switch findVersion(regex, content)->Array.get(0) {
       | Some(v) => v
       | None => ""
       }
@@ -984,7 +1008,7 @@ let browserDetect = content => {
       None
     }
   )
-  ->Belt.Array.get(0) {
+  ->Array.get(0) {
   | Some(result) => result
   | None => "Others-0"
   }
@@ -1045,27 +1069,28 @@ let getHeaders = (
 
 let formatException = exc =>
   switch exc {
-  | Exn.Error(obj) =>
-    let message = Exn.message(obj)
-    let name = Exn.name(obj)
-    let stack = Exn.stack(obj)
-    let fileName = Exn.fileName(obj)
+  | JsExn(obj) =>
+    let message = JsExn.message(obj)->Option.getOr("Unknown Error")
+    let name = JsExn.name(obj)->Option.getOr("UnknownError")
+    let stack = JsExn.stack(obj)->Option.getOr("Unknown")
+    let fileName = JsExn.fileName(obj)->Option.getOr("Unknown")
 
-    if (
-      message->Option.isSome ||
-      name->Option.isSome ||
-      stack->Option.isSome ||
-      fileName->Option.isSome
-    ) {
-      [
-        ("message", message->Option.getOr("Unknown Error")->JSON.Encode.string),
-        ("type", name->Option.getOr("Unknown")->JSON.Encode.string),
-        ("stack", stack->Option.getOr("Unknown")->JSON.Encode.string),
-        ("fileName", fileName->Option.getOr("Unknown")->JSON.Encode.string),
-      ]->getJsonFromArrayOfJson
-    } else {
-      exc->Identity.anyTypeToJson
+    let errorArray = switch name {
+    | "ChunkLoadError" => [
+        ("message", message->JSON.Encode.string),
+        ("stack", stack->JSON.Encode.string),
+      ]
+    | "SyntaxError" => [("message", "Response is not valid JSON"->JSON.Encode.string)]
+    | _ => [("message", message->JSON.Encode.string)]
     }
+
+    errorArray->Array.pushMany([
+      ("type", name->JSON.Encode.string),
+      ("fileName", fileName->JSON.Encode.string),
+    ])
+
+    errorArray->getJsonFromArrayOfJson
+
   | _ => exc->Identity.anyTypeToJson
   }
 
@@ -1218,14 +1243,17 @@ let getArrayValFromJsonDict = (dict, key, arrayKey) => {
   ->Dict.get(arrayKey)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(JSON.Decode.string)
+  ->Array.filterMap(JSON.Decode.string)
 }
 
 let isOtherElements = componentType => {
   componentType == "card" ||
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
-  componentType == "cardCvc"
+  componentType == "cardCvc" ||
+  componentType == "vaultCardNumber" ||
+  componentType == "vaultCardExpiry" ||
+  componentType == "vaultCardCvc"
 }
 
 // Elements that can have multiple instances (for event listener naming)
@@ -1236,6 +1264,9 @@ let canHaveMultipleInstances = componentType => {
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
   componentType == "cardCvc" ||
+  componentType == "vaultCardNumber" ||
+  componentType == "vaultCardExpiry" ||
+  componentType == "vaultCardCvc" ||
   componentType == "paymentMethodsSDK"
 }
 
@@ -1349,7 +1380,7 @@ let rec flattenObject = (obj, addIndicatorForObject) => {
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->jsonToNullableJson->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Decode.object {
@@ -1386,7 +1417,7 @@ let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepPare
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->jsonToNullableJson->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->getStringFromJson("")->safeParse->JSON.Decode.object {
@@ -1428,7 +1459,7 @@ let rec flatten = (obj, addIndicatorForObject) => {
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->jsonToNullableJson->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Classify.classify {
@@ -1487,31 +1518,40 @@ let rec flatten = (obj, addIndicatorForObject) => {
 
 external eventDataFromJson: JSON.t => Types.eventData = "%identity"
 
+external eventToWindowEvent: Types.event => Window.event = "%identity"
+
 let sanitizeEventData = (data: Types.eventData): Types.eventData => {
   let dict = data->anyTypeToJson->getDictFromJson
   let isCompleteEvent = dict->Dict.get("complete")->Option.isSome
   dict
   ->Dict.toArray
-  ->Array.filter(((key, _)) => key !== "iframeId" && (isCompleteEvent || key !== "elementType"))
+  ->Array.filter(((key, _)) =>
+    key !== "iframeId" && key !== "resize" && (isCompleteEvent || key !== "elementType")
+  )
   ->Dict.fromArray
   ->JSON.Encode.object
   ->eventDataFromJson
 }
+
+let getPaymentCompleteEventData = eventName =>
+  [(eventName, true->JSON.Encode.bool)]->getJsonFromArrayOfJson->eventDataFromJson
 
 let eventHandlerFunc = (
   condition: Types.event => bool,
   eventHandler,
   evType: Types.eventType,
   activity,
+  ~isTrustedMessage,
 ) => {
   let changeHandler = ev => {
-    if ev->condition {
+    if isTrustedMessage(ev) && ev->condition {
       switch evType {
       | Change
       | Click
       | Ready
+      | Resize
       | Focus
-      | CompleteDoThis
+      | PaymentComplete
       | ConfirmPayment
       | OneClickConfirmPayment
       | Blur =>
@@ -1526,18 +1566,51 @@ let eventHandlerFunc = (
   EventListenerManager.addSmartEventListener("message", changeHandler, activity)
 }
 
-let makeIframe = (element, url) => {
-  open Types
+let getFullscreenOverlayStyle = colorScheme => [
+  ("all", "initial"),
+  ("position", "fixed"),
+  ("inset", "0"),
+  ("width", "100%"),
+  ("height", "100%"),
+  ("display", "block"),
+  ("z-index", "2147483647"),
+  ("color-scheme", colorScheme),
+]
+
+let supportsPopover = !(Window.showPopoverFn->Nullable.isNullable)
+
+let fullscreenBackdropHidden = ref(false)
+let hideFullscreenBackdrop = () =>
+  if !fullscreenBackdropHidden.contents {
+    let sheet = Window.makeCssStyleSheet()
+    sheet->Window.replaceSync("#orca-fullscreen::backdrop { display: none !important; }")
+    Window.window->Window.document->Window.adoptedStyleSheets->Array.push(sheet)
+    fullscreenBackdropHidden := true
+  }
+
+let makeIframe = (element, url, ~colorScheme, ~onCreate=_ => ()) => {
   Promise.make((resolve, _) => {
-    let iframe = createElement("iframe")
-    iframe.id = "orca-fullscreen"
-    iframe.src = url
-    iframe.name = "fullscreen"
-    iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
-    iframe.onload = () => {
+    let iframe = Window.createElement("iframe")
+    iframe->Window.setAttribute("id", "orca-fullscreen")
+    iframe->Window.setAttribute("src", url)
+    iframe->Window.setAttribute("name", "fullscreen")
+    colorScheme
+    ->getFullscreenOverlayStyle
+    ->Array.forEach(((property, value)) =>
+      iframe->Window.style->Window.setStylePropertyImportant(property, value, "important")
+    )
+    iframe->Window.elementOnload(() => {
       resolve(Dict.make())
+    })
+    element->Window.appendChildElement(iframe)
+    onCreate(iframe)
+    if supportsPopover {
+      hideFullscreenBackdrop()
+      iframe->Window.setAttribute("popover", "manual")
+      iframe->Window.showPopover
+    } else {
+      Console.warn("Popover API unavailable: fullscreen overlay shown as a plain fixed iframe")
     }
-    element->appendChild(iframe)
   })
 }
 let makeHiddenIframe = (element, ~src, ~id) => {
@@ -1583,26 +1656,67 @@ let getThemePromise = dict => {
   }
 }
 
-let makeOneClickHandlerPromise = sdkHandleIsThere => {
+let loadTheme = (dict, onLoad: ThemeImporter.themeDataModule => promise<unit>) => {
+  let defaultTheme: ThemeImporter.themeDataModule = {
+    default: DefaultTheme.default,
+    defaultRules: DefaultTheme.defaultRules,
+  }
+  switch getThemePromise(dict) {
+  | Some(promise) =>
+    promise
+    ->Promise.then(onLoad)
+    ->Promise.catch(_ => onLoad(defaultTheme))
+    ->ignore
+  | None => onLoad(defaultTheme)->ignore
+  }
+}
+
+let oneClickRequestCounter = ref(0)
+
+let makeOneClickHandlerPromise = (sdkHandleIsThere, ~parentOrigin, ~parentWindow=iframeParent) => {
   Promise.make((resolve, _) => {
     if !sdkHandleIsThere {
       resolve(JSON.Encode.bool(true))
+    } else if !PaymentMessageSecurity.isConcreteOrigin(parentOrigin) {
+      resolve(JSON.Encode.bool(false))
     } else {
+      oneClickRequestCounter := oneClickRequestCounter.contents + 1
+      let requestId = `${Date.now()->Float.toString}-${oneClickRequestCounter.contents->Int.toString}`
+      let settled = ref(false)
       let handleMessage = (event: Window.event) => {
-        let json = try {
-          event.data->safeParse
-        } catch {
-        | _ => JSON.Encode.null
-        }
-
-        let dict = json->getDictFromJson
-
-        if dict->Dict.get("walletClickEvent")->Option.isSome {
-          resolve(dict->Dict.get("walletClickEvent")->Option.getOr(true->JSON.Encode.bool))
+        if (
+          !settled.contents &&
+          PaymentMessageSecurity.isExpectedSender(
+            ~source=parentWindow,
+            ~origin=parentOrigin,
+            ~eventSource=event.source,
+            ~eventOrigin=event.origin,
+          )
+        ) {
+          let dict = event.data->safeParse->getDictFromJson
+          if dict->getString("walletClickRequestId", "") === requestId {
+            switch dict->Dict.get("walletClickEvent")->Option.flatMap(JSON.Decode.bool) {
+            | Some(accepted) =>
+              settled := true
+              EventListenerManager.removeSmartEventListener("message", `walletClick-${requestId}`)
+              resolve(accepted->JSON.Encode.bool)
+            | None => ()
+            }
+          }
         }
       }
-      Window.addEventListener("message", handleMessage)
-      handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true)
+      EventListenerManager.addSmartEventListener(
+        "message",
+        event => handleMessage(event->eventToWindowEvent),
+        `walletClick-${requestId}`,
+      )
+      parentWindow->messageWindow(
+        [
+          ("oneClickConfirmTriggered", true->JSON.Encode.bool),
+          ("walletClickRequestId", requestId->JSON.Encode.string),
+        ],
+        ~targetOrigin=parentOrigin,
+      )
     }
   })
 }
@@ -1617,6 +1731,20 @@ let generateRandomString = length => {
   })
   result.contents
 }
+
+let sessionIdRef = ref(None)
+
+let getSessionId = () =>
+  switch sessionIdRef.contents {
+  | Some(id) => id
+  | None =>
+    let uuid = try Window.randomUUID() catch {
+    | _ => generateRandomString(32)
+    }
+    let id = "hyp_" ++ uuid
+    sessionIdRef := Some(id)
+    id
+  }
 
 let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   switch paymentType {
@@ -1836,20 +1964,41 @@ let mergeAndFlattenToTuples = (body, requiredFieldsBody) =>
   ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
   ->getArrayOfTupleFromDict
 
-let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) => {
+let handleIframePostMessageForWallets = (
+  msg,
+  componentName,
+  mountedIframeRef,
+  ~iframes,
+  ~targetOrigin,
+) => {
   let isMessageSent = ref(false)
-  let iframes = Window.querySelectorAll("iframe")
-
+  // Route only to widgets registered by this Elements instance. A matching URL
+  // on an unrelated merchant iframe does not make it a trusted recipient.
   iframes->Array.forEach(iframe => {
-    let iframeSrc = iframe->Window.getAttribute("src")->Nullable.toOption->Option.getOr("")
-    if iframeSrc->String.includes(`componentName=${componentName}`) {
-      iframe->Js.Nullable.return->Window.iframePostMessage(msg)
-      isMessageSent := true
+    switch iframe->Nullable.toOption {
+    | Some(element) if element->Window.Element.isConnected =>
+      let iframeSrc = element->Window.getAttribute("src")->Nullable.toOption->Option.getOr("")
+      switch PaymentMessageSecurity.httpUrl(iframeSrc) {
+      | Some(url)
+        if url.origin === targetOrigin &&
+          url.searchParams
+          ->PaymentMessageSecurity.getAll("componentName")
+          ->Array.includes(componentName) =>
+        iframe->Window.iframePostMessage(msg, ~targetOrigin)
+        isMessageSent := true
+      | _ => ()
+      }
+    | _ => ()
     }
   })
 
-  if !isMessageSent.contents {
-    mountedIframeRef->Window.iframePostMessage(msg)
+  if !isMessageSent.contents && iframes->Array.includes(mountedIframeRef) {
+    switch mountedIframeRef->Nullable.toOption {
+    | Some(element) if element->Window.Element.isConnected =>
+      // The browsing context may have navigated since the wallet was opened.
+      mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin)
+    | _ => ()
+    }
   }
 }
 
@@ -1881,7 +2030,7 @@ let isDigitLimitExceeded = (val, ~digit) => {
 }
 
 /* Redirect Handling */
-let replaceRootHref = (href: string, redirectionFlags: RecoilAtomTypes.redirectionFlags) => {
+let replaceRootHref = (href: string, redirectionFlags: JotaiAtomTypes.redirectionFlags) => {
   if redirectionFlags.shouldRemoveBeforeUnloadEvents {
     handleBeforeRedirectPostMessage()
   }
@@ -1907,14 +2056,14 @@ let replaceRootHref = (href: string, redirectionFlags: RecoilAtomTypes.redirecti
 
 let isValidHexColor = (color: string): bool => {
   let hexRegex = %re("/^#([0-9a-f]{6}|[0-9a-f]{3})$/i")
-  Js.Re.test_(hexRegex, color)
+  RegExp.test(hexRegex, color)
 }
 
 let convertKeyValueToJsonStringPair = (key, value) => (key, JSON.Encode.string(value))
 
 let validateName = (
   val: string,
-  prev: RecoilAtomTypes.field,
+  prev: JotaiAtomTypes.field,
   localeString: LocaleStringTypes.localeStrings,
 ) => {
   let isValid = val !== "" && %re("/^\D*$/")->RegExp.test(val)
@@ -1943,7 +2092,7 @@ let validateNickname = (val: string, localeString: LocaleStringTypes.localeStrin
 
 let setNickNameState = (
   val,
-  prevState: RecoilAtomTypes.field,
+  prevState: JotaiAtomTypes.field,
   localeString: LocaleStringTypes.localeStrings,
 ) => {
   let (isValid, errorString) = val->validateNickname(localeString)
@@ -2053,6 +2202,30 @@ let getSdkAuthorizationData = sdkAuthorization => {
   }
 }
 
+// Parses the unified create() API arguments into (componentType, options).
+// Supports both:
+//   Legacy API: create("payment", options)
+//   New API:    create({ type: "payment", options: {...} })
+let parseComponentTypeAndOptions = (
+  ~componentTypeOrOptions: JSON.t,
+  ~legacyOptions: Nullable.t<JSON.t>,
+  ~defaultComponentType: string,
+): (string, JSON.t) => {
+  switch componentTypeOrOptions->JSON.Classify.classify {
+  | String(typeStr) =>
+    let opts = legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
+    (typeStr, opts)
+  | Object(dict) =>
+    let componentType = dict->getString("type", defaultComponentType)
+    let opts = switch dict->Dict.get("options") {
+    | Some(o) => o
+    | None => legacyOptions->Nullable.toOption->Option.getOr(JSON.Encode.null)
+    }
+    (componentType, opts)
+  | _ => (defaultComponentType, JSON.Encode.null)
+  }
+}
+
 let getPaymentIdOrExtractFromSdkAuth = (~clientSecret, ~sdkAuthorization) => {
   switch sdkAuthorization {
   | Some(sdkAuth) =>
@@ -2064,5 +2237,21 @@ let getPaymentIdOrExtractFromSdkAuth = (~clientSecret, ~sdkAuthorization) => {
     }
     paymentId->Option.getOr(clientSecret->getPaymentId)
   | None => clientSecret->getPaymentId
+  }
+}
+
+let getMerchantIdOrExtractFromSdkAuth = (~merchantId, ~sdkAuthorization) => {
+  if merchantId !== "" {
+    merchantId
+  } else {
+    switch sdkAuthorization {
+    | Some(sdkAuth) =>
+      try {
+        getSdkAuthorizationData(sdkAuth).publishableKey->Option.getOr("")
+      } catch {
+      | _ => ""
+      }
+    | None => ""
+    }
   }
 }

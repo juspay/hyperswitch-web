@@ -23,7 +23,7 @@ let midnight = {
   fontSizeXs: "10px",
   fontSize2Xs: "8px",
   fontSize3Xs: "6px",
-  colorSuccess: "",
+  colorSuccess: "#16875B",
   colorWarning: "",
   colorPrimaryText: "#000000",
   colorBackgroundText: "#ffffffe0",
@@ -49,6 +49,7 @@ let midnight = {
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
   disabledFieldColor: "#24252D",
+  inputFieldHeight: "48px",
 }
 
 let midnightRules = theme =>
@@ -234,6 +235,15 @@ let midnightRules = theme =>
       "fontSize": theme.fontSize2Xl,
       "fontWeight": theme.fontWeightMedium,
       "marginBottom": "1.5rem",
+    },
+    ".Loader--fullscreen": {
+      "backgroundColor": "rgba(48, 49, 61, 0.8)",
+      "backdropFilter": "blur(40px) contrast(1.25)",
+      "opacity": "0.7",
+    },
+    ".Loader--overlay": {
+      "backgroundColor": "rgba(48, 49, 61, 0.6)",
+      "backdropFilter": "blur(4px)",
     },
   }->Identity.anyTypeToJson
 

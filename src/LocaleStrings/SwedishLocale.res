@@ -35,6 +35,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `Lägg till kredit-/betalkort`,
   useExisitingSavedCards: `Använd sparade betal-/kreditkort`,
   saveCardDetails: `Spara kortuppgifter`,
+  savePaymentDetails: `Spara mina betalningsuppgifter säkert för snabbare betalningar`,
+  savePaymentDetailsWhereverPossible: `Spara mina betalningsuppgifter säkert för snabbare betalningar, där det är tillgängligt`,
   addBankAccount: `Lägg till bankkonto`,
   achBankDebitTerms: str =>
     `Genom att ange ditt kontonummer och bekräfta denna betalning godkänner du att ${str} och Hyperswitch, vår betaltjänstleverantör, skickar instruktioner till din bank att debitera ditt konto och att din bank debiterar ditt konto i enlighet med dessa instruktioner. Du har rätt till återbetalning från din bank enligt villkoren i ditt avtal med din bank. En återbetalning måste begäras inom 8 veckor från det datum då ditt konto debiterades.`,
@@ -265,4 +267,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "Visa mindre",
   refreshingText: "Uppdaterar...",
   paymentDetailsBeingCheckedText: "Betalningsinformation kontrolleras. Vänligen vänta",
+  eligibleOffersText: "Tillgängliga erbjudanden",
+  checkingEligibleOffersText: "Kontrollerar tillgängliga erbjudanden",
+  cardOfferText: "Korterbjudande",
+  offerAppliedText: "Tillämpat",
 }

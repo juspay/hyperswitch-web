@@ -71,11 +71,11 @@ let useHandleSamsungPayResponse = (
   ~isSavedMethodsFlow=false,
   ~isWallet=true,
 ) => {
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let {publishableKey, sdkAuthorization} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let {parentURL, publishableKey, sdkAuthorization} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   React.useEffect(() => {
@@ -116,7 +116,12 @@ let useHandleSamsungPayResponse = (
         }
       }
     }
-    Window.addEventListener("message", handleSamsung)
-    Some(() => {Window.removeEventListener("message", handleSamsung)})
-  }, (isSavedMethodsFlow, isManualRetryEnabled, isWallet, sdkAuthorization))
+    let handleTrusted = (ev: Window.event) => {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) {
+        handleSamsung(ev)
+      }
+    }
+    Window.addEventListener("message", handleTrusted)
+    Some(() => {Window.removeEventListener("message", handleTrusted)})
+  }, (isSavedMethodsFlow, isManualRetryEnabled, isWallet, sdkAuthorization, parentURL))
 }

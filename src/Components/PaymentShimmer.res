@@ -1,7 +1,7 @@
 @react.component
 let make = (~showInBlock=true) => {
   open PaymentElementShimmer
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let bottomElement =
     <Shimmer classname="opacity-50">
       <div

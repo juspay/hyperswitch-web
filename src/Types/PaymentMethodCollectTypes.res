@@ -32,6 +32,7 @@ type paymentMethodDataField =
   | BacsBankCity
   | SepaIban
   | SepaBic
+  | SepaAccountHolderName
   | SepaBankName
   | SepaBankCity
   | SepaCountryCode
@@ -293,6 +294,8 @@ let decodeFieldType = (key: string, fieldType: option<dynamicFieldType>): option
   // SEPA
   | ("payout_method_data.bank.iban", _) => Some(PayoutMethodData(SepaIban))
   | ("payout_method_data.bank.bic", _) => Some(PayoutMethodData(SepaBic))
+  | ("payout_method_data.bank.account_holder_name", _) =>
+    Some(PayoutMethodData(SepaAccountHolderName))
 
   // Billing address
   | ("billing.address.first_name", _) => Some(BillingAddress(FullName(FirstName)))
@@ -331,6 +334,7 @@ let customPmdOrder = [
   "payout_method_data.card.card_holder_name",
   "payout_method_data.bank.iban",
   "payout_method_data.bank.bic",
+  "payout_method_data.bank.account_holder_name",
 ]
 
 let createCustomOrderMap = (customOrder: array<string>): Map.t<string, int> => {

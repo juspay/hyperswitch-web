@@ -1,0 +1,45 @@
+{
+  "_source": "synthetic",
+  "_note": "Hand-authored from shared-code/sdk-utils/utils/SdkConfigParser.res. No raw_configs, so the SDK renders no superposition-driven required fields (card number/expiry/CVC only). Specs that test dynamic/billing fields need a recorded sdk_config with raw_configs.",
+  "routes": [
+    {
+      "name": "sdkConfigs",
+      "method": "GET",
+      "path": "/v1/sdk/configs/web/sdk_config.json",
+      "status": 200,
+      "body": {
+        "payment_methods": [
+          {
+            "payment_method": "card",
+            "payment_method_types": [
+              {
+                "payment_method_type": "credit",
+                "payment_method_criteria": "connector",
+                "criteria_rules": [{ "criteria_value": "default", "eligible_connectors": ["stripe"] }]
+              },
+              {
+                "payment_method_type": "debit",
+                "payment_method_criteria": "connector",
+                "criteria_rules": [{ "criteria_value": "default", "eligible_connectors": ["stripe"] }]
+              }
+            ]
+          }
+        ],
+        "account_config": {
+          "profile": {
+            "vaulting_action": "skip",
+            "collect_shipping_details_from_wallet_connector": false,
+            "collect_billing_details_from_wallet_connector": false,
+            "always_collect_shipping_details_from_wallet_connector": false,
+            "always_collect_billing_details_from_wallet_connector": false
+          }
+        },
+        "context_used": {
+          "profile_id": "{{intent.profile_id}}",
+          "processor_merchant_id": "{{merchant_id}}",
+          "organization_id": "org_hermetic"
+        }
+      }
+    }
+  ]
+}

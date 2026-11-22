@@ -45,6 +45,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   addNewCard: `הוספת כרטיס אשראי/כרטיס חיוב (דביט)`,
   useExisitingSavedCards: `שימוש בכרטיסי חיוב/ אשראי שמורים`,
   saveCardDetails: `שמירת פרטי הכרטיס`,
+  savePaymentDetails: `שמור את פרטי התשלום שלי באופן מאובטח לתשלומים מהירים יותר`,
+  savePaymentDetailsWhereverPossible: `שמור את פרטי התשלום שלי באופן מאובטח לתשלומים מהירים יותר, כאשר זמין`,
   addBankAccount: `הוסף חשבון בנק`,
   achBankDebitTerms: str =>
     `על ידי הזנת מספר החשבון שלך ואישור תשלום זה, אתה מאשר את ${str} ואת Hyperswitch, ספק השירותים התשלום שלנו, לשלוח הוראות לבנק שלך לחייב את החשבון שלך ולהפחית את החשבון שלך על פי ההוראות האלה. אתה זכאי לקבל החזר מהבנק שלך על פי תנאי ההסכם שלך עם הבנק. ההחזר יכול להידרש תוך 8 שבועות מהתאריך שבו הוא הופחת מחשבונך.`,
@@ -266,4 +268,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   showLess: "הצג פחות",
   refreshingText: "מרענן...",
   paymentDetailsBeingCheckedText: "פרטי התשלום נבדקים. אנא המתן",
+  eligibleOffersText: "הצעות זכאיות",
+  checkingEligibleOffersText: "בודק הצעות זכאיות",
+  cardOfferText: "הצעת כרטיס",
+  offerAppliedText: "הוחלה",
 }

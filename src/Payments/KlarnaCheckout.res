@@ -1,19 +1,19 @@
-open RecoilAtoms
+open JotaiAtoms
 open Promise
 
 let klarnaIcon = <Icon size=35 width=90 name="klarna" />
 
 @react.component
 let make = () => {
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
-  let options = Recoil.useRecoilValueFromAtom(optionAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
-  let sdkConfigsValue = Recoil.useRecoilValueFromAtom(PaymentUtils.sdkConfigsValue)
+  let loggerState = Jotai.useAtomValue(loggerAtom)
+  let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
+  let {publishableKey, parentURL} = Jotai.useAtomValue(keys)
+  let options = Jotai.useAtomValue(optionAtom)
+  let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
+  let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Some(loggerState), Other)
+  let sdkConfigsValue = Jotai.useAtomValue(PaymentUtils.sdkConfigsValue)
   let (klarnaClicked, setKlarnaClicked) = React.useState(_ => false)
-  let isTestMode = Recoil.useRecoilValueFromAtom(RecoilAtoms.isTestMode)
+  let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
   let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
   | Klarna(val) => val
@@ -41,7 +41,10 @@ let make = () => {
 
         setKlarnaClicked(_ => true)
 
-        let result = await Utils.makeOneClickHandlerPromise(sdkHandleIsThere)
+        let result = await Utils.makeOneClickHandlerPromise(
+          sdkHandleIsThere,
+          ~parentOrigin=parentURL,
+        )
         let decodedResult = result->JSON.Decode.bool->Option.getOr(false)
 
         if decodedResult {
