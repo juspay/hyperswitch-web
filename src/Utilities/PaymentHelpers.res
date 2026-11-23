@@ -1739,7 +1739,11 @@ let fetchClientList = async (
   )
 
   let onSuccess = data => data
-  let onFailure = _ => JSON.Encode.null
+
+  let onFailure = error =>
+    error->getDictFromJson->getDictIsSome("error")
+      ? error
+      : [("error", error)]->Dict.fromArray->JSON.Encode.object
 
   await fetchApiWithLogging(
     uri,
@@ -2436,7 +2440,10 @@ let fetchSdkConfigs = async (
 
   let onSuccess = data => data
 
-  let onFailure = _ => JSON.Encode.null
+  let onFailure = error =>
+    error->getDictFromJson->getDictIsSome("error")
+      ? error
+      : [("error", error)]->Dict.fromArray->JSON.Encode.object
 
   await fetchApiWithLogging(
     uri,
