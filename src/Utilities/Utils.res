@@ -685,6 +685,14 @@ let constructClass = (~classname, ~dict) => {
   let puseduoArr = []
   let modifiedArr = []
 
+  let safeProperty = key => (/^[a-zA-Z-]+$/)->RegExp.test(key)
+  let safeValue = value =>
+    !((/[{};\\]/)->RegExp.test(value)) &&
+    !((/\/\*|\*\//)->RegExp.test(value)) &&
+    !((/url\s*\(|@import/i)->RegExp.test(value))
+  let declaration = (key, value) =>
+    safeProperty(key) && safeValue(value) ? `${key}:${value}` : ""
+
   dict
   ->Dict.toArray
   ->Array.map(entry => {
@@ -695,7 +703,7 @@ let constructClass = (~classname, ~dict) => {
 
     let class = if !(key->String.startsWith(":")) && !(key->String.startsWith(".")) {
       switch value->JSON.Decode.string {
-      | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
+      | Some(str) => declaration(key->toKebabCaseIfNeeded, str)
       | None => ""
       }
     } else if key->String.startsWith(":") {
@@ -707,11 +715,13 @@ let constructClass = (~classname, ~dict) => {
           ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
-            | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
+            | Some(str) => declaration(key->toKebabCaseIfNeeded, str)
             | None => ""
             }
           })
-        `.${classname}${key} {${style->Array.join(";")}}`
+        (/^:[a-zA-Z-]+$/)->RegExp.test(key)
+          ? `.${classname}${key} {${style->Array.join(";")}}`
+          : ""
 
       | None => ""
       }
@@ -724,11 +734,13 @@ let constructClass = (~classname, ~dict) => {
           ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
-            | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
+            | Some(str) => declaration(key->toKebabCaseIfNeeded, str)
             | None => ""
             }
           })
-        `${key} {${style->Array.join(";")}} `
+        (/^\.[a-zA-Z0-9 _.:#>+~-]+$/)->RegExp.test(key)
+          ? `${key} {${style->Array.join(";")}} `
+          : ""
 
       | None => ""
       }
@@ -744,7 +756,9 @@ let constructClass = (~classname, ~dict) => {
   })
   ->ignore
 
-  if classname->String.length == 0 {
+  if classname !== "" && !((/^[a-zA-Z0-9_-]+$/)->RegExp.test(classname)) {
+    ""
+  } else if classname->String.length == 0 {
     `${modifiedArr->Array.join(";")} ${puseduoArr->Array.join(" ")}`
   } else {
     `.${classname} {${modifiedArr->Array.join(";")}} ${puseduoArr->Array.join(" ")}`
