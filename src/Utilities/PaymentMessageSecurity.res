@@ -1,5 +1,5 @@
 // A window identity alone survives navigation; always authenticate its origin too.
-let isConcreteOrigin = origin => origin !== "" && origin !== "*" && origin !== "null"
+let isConcreteOrigin = Window.isConcreteOrigin
 
 let isExpectedSender = (~source, ~origin, ~eventSource, ~eventOrigin) =>
   isConcreteOrigin(origin) && eventSource === source && eventOrigin === origin
@@ -29,6 +29,7 @@ type redirectUrl = {
   username: string,
   password: string,
   hash: string,
+  search: string,
   searchParams: queryParams,
 }
 @new external parseUrl: string => redirectUrl = "URL"
@@ -52,6 +53,17 @@ let httpUrl = url => {
 
 let originOf = url => httpUrl(url)->Option.map(url => url.origin)
 
+let pinnedParentOrigin = ref("")
+let parentOrigin = () => pinnedParentOrigin.contents !== ""
+  ? pinnedParentOrigin.contents
+  : Window.referrer->originOf->Option.getOr("")
+
+let pinParentOrigin = origin => {
+  if origin === Window.referrer->originOf->Option.getOr("") && isConcreteOrigin(origin) {
+    pinnedParentOrigin := origin
+  }
+}
+
 // Script-executing and local-content schemes are never a payment return destination.
 let blockedReturnProtocols = ["javascript:", "data:", "vbscript:", "blob:", "file:"]
 
@@ -65,6 +77,12 @@ let returnDestinationUrl = url => {
   | _ => None
   }
 }
+
+let makeReturnUrl = url =>
+  switch returnDestinationUrl(url) {
+  | Some(parsed) => URLModule.makeUrl(parsed.href)
+  | None => Js.Exn.raiseError("Invalid payment return URL")
+  }
 
 // Confirmation adds status/payment query parameters, but must not change the
 // merchant's configured destination or introduce an executable URL scheme.

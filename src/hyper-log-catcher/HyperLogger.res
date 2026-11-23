@@ -97,11 +97,10 @@ let make = (
     merchantId := value
   }
 
-  let metadata = ref(metadata->Option.getOr(JSON.Encode.null))
+  let _ = metadata
+  let metadata = ref(JSON.Encode.null)
 
-  let setMetadata = value => {
-    metadata := value
-  }
+  let setMetadata = _value => ()
 
   let calculateAndUpdateCounterHook = eventName => {
     let updatedCounter = switch eventsCounter.contents->Dict.get(eventName) {
@@ -140,23 +139,11 @@ let make = (
   }
 
   let beaconApiCall = data => {
-    if data->Array.length > 0 {
+    if GlobalVars.enableLogging && loggingLevel !== SILENT && data->Array.length > 0 {
       let logData = data->Array.map(logFileToObj)->JSON.Encode.array->JSON.stringify
       Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
     }
   }
-  let sendCachedLogsFromIDB = async () => {
-    try {
-      let logs = await retrieveLogsFromIndexedDB()
-      if logs->Array.length > 0 {
-        beaconApiCall(logs)
-        await clearLogsFromIndexedDB()
-      }
-    } catch {
-    | _ => ()
-    }
-  }
-
   let clientSecret = getRefFromOption(clientSecret)
 
   let setClientSecret = value => {
@@ -209,18 +196,8 @@ let make = (
     }
   }
 
-  let sendLogsToIndexedDB = async () => {
-    try {
-      let _ = await saveLogsToIndexedDB(mainLogFile)
-      clearLogFile(mainLogFile)
-    } catch {
-    | _ => ()
-    }
-  }
-
   let sendLogsOverNetwork = async () => {
     try {
-      sendCachedLogsFromIDB()->ignore
       beaconApiCall(mainLogFile)
       clearLogFile(mainLogFile)
     } catch {
@@ -241,10 +218,12 @@ let make = (
     | NOT_AVAILABLE => NetworkInformation.defaultNetworkState
     }
 
-    if networkStatus.isOnline {
-      sendLogsOverNetwork()->ignore
-    } else {
-      sendLogsToIndexedDB()->ignore
+    if GlobalVars.enableLogging && loggingLevel !== SILENT {
+      if networkStatus.isOnline {
+        sendLogsOverNetwork()->ignore
+      } else {
+        clearLogFile(mainLogFile)
+      }
     }
   }
 

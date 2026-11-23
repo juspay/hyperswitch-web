@@ -24,8 +24,13 @@ let useMessageHandler = getMessageHandler => {
         switch parentOrigin.contents {
         | Some(expected) => ev.origin === expected
         | None =>
-          parentOrigin := Some(ev.origin)
-          true
+          if ev.origin === PaymentMessageSecurity.parentOrigin() {
+            parentOrigin := Some(ev.origin)
+            PaymentMessageSecurity.pinParentOrigin(ev.origin)
+            true
+          } else {
+            false
+          }
         }
       }
     }
@@ -35,7 +40,7 @@ let useMessageHandler = getMessageHandler => {
       }
     }
     let sendLifecycleMessage = message => {
-      Utils.messageParentWindow(message, ~targetOrigin=parentOrigin.contents->Option.getOr("*"))
+      Utils.messageParentWindow(message, ~targetOrigin=parentOrigin.contents->Option.getOr(""))
     }
 
     let setupMessageListener = _ => {

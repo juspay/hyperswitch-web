@@ -39,9 +39,13 @@ let make = () => {
 
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
 
-  switch getQueryParamsDictforKey(url.search, "endpoint") {
-  | "" => ()
-  | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+  let hasConfiguredEndpointRef = React.useRef(false)
+  if !hasConfiguredEndpointRef.current {
+    hasConfiguredEndpointRef.current = true
+    switch getQueryParamsDictforKey(url.search, "endpoint") {
+    | "" => ()
+    | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+    }
   }
 
   React.useEffect(() => {

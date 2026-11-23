@@ -66,20 +66,18 @@ let make = (
         )->Nullable.isNullable
       ) {
         let componentType = "preMountLoader"
-        let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
-          <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
-           <iframe
-           id ="orca-payment-element-iframeRef-${localSelectorString}"
-           name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&pmSessionId=${pmSessionId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}&sdkAuthorization=${sdkAuthorization}"
-          allow="*"
-          name="orca-payment"
-          style="outline: none;"
-        ></iframe>
-        </div>`
-        let iframeDiv = Window.createElement("div")
-        iframeDiv->Window.innerHTML(iframeDivHtml)
-        Window.body->Window.appendChild(iframeDiv)
+        PreMountLoaderFrame.make(
+          ~selectorString=localSelectorString,
+          ~queryParams=[
+            ("fullscreenType", componentType),
+            ("publishableKey", publishableKey),
+            ("pmSessionId", pmSessionId),
+            ("sessionId", sdkSessionId),
+            ("endpoint", endpoint),
+            ("hyperComponentName", hyperComponentName->getStrFromHyperComponentName),
+            ("sdkAuthorization", sdkAuthorization),
+          ],
+        )->ignore
       }
 
       let elem = Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`)
@@ -250,7 +248,6 @@ let make = (
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
             ("customPodUri", customPodUri->JSON.Encode.string),
-            ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),
             ("customBackendUrl", customBackendUrl->JSON.Encode.string),

@@ -700,7 +700,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
                   CardThemeType.getPaymentModeToString(paymentType)->JSON.Encode.string,
                 ),
               ]
-              ->CommonUtils.getJsonStringFromArrayOfJson,
+              ->Dict.fromArray->JSON.Encode.object->JSON.stringify,
               ~eventName,
             )
           }
@@ -744,7 +744,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             (isSavedMethodsScreenShown ? "saved_methods" : "payment_methods")->JSON.Encode.string,
           ),
         ]
-        ->CommonUtils.getJsonStringFromArrayOfJson
+        ->Dict.fromArray->JSON.Encode.object->JSON.stringify
       if lastLoggedMethods.current !== Some(methodsLog) {
         lastLoggedMethods.current = Some(methodsLog)
         loggerState.setLogInfo(~eventName=PAYMENT_METHODS_RENDERED, ~value=methodsLog)

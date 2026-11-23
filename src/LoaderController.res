@@ -7,7 +7,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (configAtom, setConfig) = Jotai.useAtom(configAtom)
   let setIsConfigReady = Jotai.useSetAtom(isConfigReady)
   let (keys, setKeys) = Jotai.useAtom(keys)
-  let parentOriginRef = React.useRef(None)
+  let hasConfiguredEndpointRef = React.useRef(false)
+  let isParentMessage = PaymentMessageHooks.useParentMessageCheck(~isInitialization=dict =>
+    dict->Utils.getDictIsSome("paymentElementCreate")
+  )
   let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
   let setSdkConfigs = Jotai.useSetAtom(sdkConfigs)
   let setSdkConfigsValue = Jotai.useSetAtom(PaymentUtils.sdkConfigsValue)
@@ -328,12 +331,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       let json = ev.data->safeParse
       try {
         let dict = json->getDictFromJson
+        let canConfigureEndpoint =
+          !hasConfiguredEndpointRef.current && dict->getDictIsSome("paymentElementCreate")
+        if canConfigureEndpoint {
+          hasConfiguredEndpointRef.current = true
+        }
 
         // Card-form ports are never taken from the host page: script there could read
         // every keystroke through them. See CardFormPortHandshake.
         if dict->getDictIsSome("paymentElementCreate") {
           // Pin the browser-provided origin of the direct host, never a payload's wildcard.
-          parentOriginRef.current = Some(ev.origin)
           dict->Dict.set("parentURL", ev.origin->JSON.Encode.string)
           setKeys(prev => {...prev, parentURL: ev.origin})
 
@@ -526,9 +533,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         // PaymentMethodsSDK reads this atom to render only the vault CVC field.
         if dict->Dict.get("isSavedCardCvcFlow")->Option.isSome {
           setIsSavedCardCvcFlow(_ => dict->Utils.getBool("isSavedCardCvcFlow", false))
-          switch dict->getString("endpoint", "") {
-          | "" => ()
-          | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+          if canConfigureEndpoint {
+            switch dict->getString("endpoint", "") {
+            | "" => ()
+            | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+            }
           }
         }
         if dict->Dict.get("cardCollectionMode")->Option.isSome {
@@ -587,7 +596,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             ->getString("customBackendUrl", "")
             ->String.length > 0
         ) {
-          if dict->getDictIsSome("endpoint") {
+          if canConfigureEndpoint && dict->getDictIsSome("endpoint") {
             switch dict->getString("endpoint", "") {
             | "" => ()
             | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
@@ -748,11 +757,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     }
     let handleHostMessage = (ev: Window.event) => {
-      let isExpectedOrigin =
-        parentOriginRef.current
-        ->Option.map(origin => ev.origin === origin)
-        ->Option.getOr(true)
-      if ev.source === iframeParent && ev.origin !== "null" && isExpectedOrigin {
+      if isParentMessage(ev) {
         handleFun(ev)
       }
     }

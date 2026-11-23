@@ -45,6 +45,6 @@ Types.window["Hyper"]["init"] = Hyper.make
 Types.window["removeBeforeUnloadEventListeners"] = removeBeforeUnloadEventListeners
 
 let isWordpress = Types.window["wp"] !== JSON.Encode.null
-if !isWordpress {
+if !isWordpress && Types.window["Stripe"]->Nullable.toOption->Option.isNone {
   Types.window["Stripe"] = Hyper.make
 }

@@ -27,23 +27,28 @@ open ErrorUtils
 
 let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
 
-let messageWindow = (window, ~targetOrigin="*", messageArr) => {
-  window->postMessage(messageArr->getJsonFromArrayOfJson, targetOrigin)
+let messageWindow = (window, ~targetOrigin="", messageArr) => {
+  if PaymentMessageSecurity.isConcreteOrigin(targetOrigin) {
+    window->postMessage(messageArr->getJsonFromArrayOfJson, targetOrigin)
+  }
 }
 
-let messageTopWindow = (~targetOrigin="*", messageArr) => {
-  topParent->messageWindow(~targetOrigin, messageArr)
+let messageTopWindow = (~targetOrigin="", messageArr) => {
+  let origin = targetOrigin === "" ? PaymentMessageSecurity.parentOrigin() : targetOrigin
+  topParent->messageWindow(~targetOrigin=origin, messageArr)
 }
 
-let messageParentWindow = (~targetOrigin="*", messageArr) => {
-  iframeParent->messageWindow(~targetOrigin, messageArr)
+let messageParentWindow = (~targetOrigin="", messageArr) => {
+  let origin = targetOrigin === "" ? PaymentMessageSecurity.parentOrigin() : targetOrigin
+  iframeParent->messageWindow(~targetOrigin=origin, messageArr)
 }
 
-let messageCurrentWindow = (~targetOrigin="*", messageArr) => {
-  window->messageWindow(~targetOrigin, messageArr)
+let messageCurrentWindow = (~targetOrigin="", messageArr) => {
+  let origin = targetOrigin === "" ? Window.Location.origin : targetOrigin
+  window->messageWindow(~targetOrigin=origin, messageArr)
 }
 
-let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
+let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="") => {
   messageParentWindow(
     [
       ("focus", true->JSON.Encode.bool),
@@ -54,11 +59,11 @@ let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
   )
 }
 
-let handleOnPaymentCompleteMessage = (~targetOrigin="*") => {
+let handleOnPaymentCompleteMessage = (~targetOrigin="") => {
   messageParentWindow([("paymentComplete", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
-let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
+let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="") => {
   messageParentWindow(
     [
       ("blur", true->JSON.Encode.bool),
@@ -69,18 +74,18 @@ let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
   )
 }
 
-let handleOnClickPostMessage = (~targetOrigin="*", ev) => {
+let handleOnClickPostMessage = (~targetOrigin="", ev) => {
   messageParentWindow(
     [("clickTriggered", true->JSON.Encode.bool), ("event", ev->JSON.stringify->JSON.Encode.string)],
     ~targetOrigin,
   )
 }
-let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false) => {
+let handleOnConfirmPostMessage = (~targetOrigin="", ~isOneClick=false) => {
   let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
   messageParentWindow([(message, true->JSON.Encode.bool)], ~targetOrigin)
 }
 
-let handleBeforeRedirectPostMessage = (~targetOrigin="*") => {
+let handleBeforeRedirectPostMessage = (~targetOrigin="") => {
   messageTopWindow([("disableBeforeUnloadEventListener", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
@@ -680,6 +685,14 @@ let constructClass = (~classname, ~dict) => {
   let puseduoArr = []
   let modifiedArr = []
 
+  let safeProperty = key => (/^[a-zA-Z-]+$/)->RegExp.test(key)
+  let safeValue = value =>
+    !((/[{};\\]/)->RegExp.test(value)) &&
+    !((/\/\*|\*\//)->RegExp.test(value)) &&
+    !((/url\s*\(|@import/i)->RegExp.test(value))
+  let declaration = (key, value) =>
+    safeProperty(key) && safeValue(value) ? `${key}:${value}` : ""
+
   dict
   ->Dict.toArray
   ->Array.map(entry => {
@@ -690,7 +703,7 @@ let constructClass = (~classname, ~dict) => {
 
     let class = if !(key->String.startsWith(":")) && !(key->String.startsWith(".")) {
       switch value->JSON.Decode.string {
-      | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
+      | Some(str) => declaration(key->toKebabCaseIfNeeded, str)
       | None => ""
       }
     } else if key->String.startsWith(":") {
@@ -702,11 +715,13 @@ let constructClass = (~classname, ~dict) => {
           ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
-            | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
+            | Some(str) => declaration(key->toKebabCaseIfNeeded, str)
             | None => ""
             }
           })
-        `.${classname}${key} {${style->Array.join(";")}}`
+        (/^:[a-zA-Z-]+$/)->RegExp.test(key)
+          ? `.${classname}${key} {${style->Array.join(";")}}`
+          : ""
 
       | None => ""
       }
@@ -719,11 +734,13 @@ let constructClass = (~classname, ~dict) => {
           ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
-            | Some(str) => `${key->toKebabCaseIfNeeded}:${str}`
+            | Some(str) => declaration(key->toKebabCaseIfNeeded, str)
             | None => ""
             }
           })
-        `${key} {${style->Array.join(";")}} `
+        (/^\.[a-zA-Z0-9 _.:#>+~-]+$/)->RegExp.test(key)
+          ? `${key} {${style->Array.join(";")}} `
+          : ""
 
       | None => ""
       }
@@ -739,7 +756,9 @@ let constructClass = (~classname, ~dict) => {
   })
   ->ignore
 
-  if classname->String.length == 0 {
+  if classname !== "" && !((/^[a-zA-Z0-9_-]+$/)->RegExp.test(classname)) {
+    ""
+  } else if classname->String.length == 0 {
     `${modifiedArr->Array.join(";")} ${puseduoArr->Array.join(" ")}`
   } else {
     `.${classname} {${modifiedArr->Array.join(";")}} ${puseduoArr->Array.join(" ")}`
@@ -1721,14 +1740,20 @@ let makeOneClickHandlerPromise = (sdkHandleIsThere, ~parentOrigin, ~parentWindow
   })
 }
 
+@new external makeRandomBytes: int => array<int> = "Uint8Array"
+@val @scope("crypto") external getRandomValues: array<int> => array<int> = "getRandomValues"
+
 let generateRandomString = length => {
   let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   let result = ref("")
-  let charactersLength = characters->String.length
-  Int.range(0, length)->Array.forEach(_ => {
-    let charIndex = mod((Math.random() *. 100.0)->Float.toInt, charactersLength)
-    result := result.contents ++ characters->String.charAt(charIndex)
-  })
+  while result.contents->String.length < length {
+    let bytes = getRandomValues(makeRandomBytes(length))
+    bytes->Array.forEach(byte => {
+      if byte < 252 && result.contents->String.length < length {
+        result := result.contents ++ characters->String.charAt(mod(byte, 36))
+      }
+    })
+  }
   result.contents
 }
 

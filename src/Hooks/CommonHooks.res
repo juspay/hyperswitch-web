@@ -188,6 +188,6 @@ let defaultkeys = {
   publishableKey: "",
   paymentId: "",
   iframeId: "",
-  parentURL: "*",
+  parentURL: "",
   sdkHandleOneClickConfirmPayment: true,
 }

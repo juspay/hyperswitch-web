@@ -561,7 +561,6 @@ let make = (
             ("blockConfirm", blockConfirm->JSON.Encode.bool),
             ("customPodUri", customPodUri->JSON.Encode.string),
             ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
-            ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),
             ("customBackendUrl", customBackendUrl->JSON.Encode.string),

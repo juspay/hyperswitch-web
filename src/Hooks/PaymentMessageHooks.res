@@ -12,8 +12,9 @@ let useParentMessageCheck = (~isInitialization) => {
       | Some(expected) => ev.origin === expected
       | None =>
         let dict = ev.data->Utils.safeParse->Utils.getDictFromJson
-        if isInitialization(dict) {
+        if ev.origin === PaymentMessageSecurity.parentOrigin() && isInitialization(dict) {
           origin.current = Some(ev.origin)
+          PaymentMessageSecurity.pinParentOrigin(ev.origin)
           true
         } else {
           false

@@ -1,6 +1,6 @@
 open Utils
 
-let randomIdSuffix = (): string => Math.random()->Float.toString->String.slice(~start=2, ~end=8)
+let randomIdSuffix = (): string => generateRandomString(8)
 
 let uniqueId = (~prefix: string): string =>
   `${prefix}-${Date.now()->Float.toString}-${randomIdSuffix()}`
@@ -157,7 +157,6 @@ let buildFieldMountConfig = (
   ->Array.concat([
     ("sdkSessionId", sdkSessionId->JSON.Encode.string),
     ("customPodUri", ""->JSON.Encode.string),
-    ("parentURL", "*"->JSON.Encode.string),
     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
     ("launchTime", Date.now()->JSON.Encode.float),
     ("loggerSource", loggerSource->JSON.Encode.string),

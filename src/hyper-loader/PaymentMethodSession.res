@@ -290,7 +290,6 @@ let make = (
           ("publishableKey", publishableKey->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
           ("loggerPaymentId", pmSessionId->JSON.Encode.string),
-          ("parentURL", "*"->JSON.Encode.string),
           ("launchTime", Date.now()->JSON.Encode.float),
         ]->Dict.fromArray,
         ~targetOrigin=URLModule.makeUrl(ApiEndpoint.vaultSdkDomainUrl).origin,

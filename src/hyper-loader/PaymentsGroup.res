@@ -161,7 +161,6 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
                     ("sdkAuthorization", sdkAuthorization->JSON.Encode.string),
                     ("sdkSessionId", ""->JSON.Encode.string),
                     ("customPodUri", ""->JSON.Encode.string),
-                    ("parentURL", "*"->JSON.Encode.string),
                     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
                     ("launchTime", Date.now()->JSON.Encode.float),
                     ("loggerSource", "hyper_payments_coordinator"->JSON.Encode.string),
