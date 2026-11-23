@@ -66,6 +66,12 @@ let returnDestinationUrl = url => {
   }
 }
 
+let makeReturnUrl = url =>
+  switch returnDestinationUrl(url) {
+  | Some(parsed) => URLModule.makeUrl(parsed.href)
+  | None => Js.Exn.raiseError("Invalid payment return URL")
+  }
+
 // Confirmation adds status/payment query parameters, but must not change the
 // merchant's configured destination or introduce an executable URL scheme.
 let isReturnDestination = (~url, ~returnUrl) =>

@@ -398,7 +398,7 @@ let rec intentCall = (
   )
   ->then(res => {
     let statusCode = res->Fetch.Response.status
-    let url = makeUrl(confirmParam.return_url)
+    let url = PaymentMessageSecurity.makeReturnUrl(confirmParam.return_url)
     if isLegacyClientSecretFlow {
       url.searchParams.set("payment_intent_client_secret", clientSecret)
     }
@@ -575,7 +575,7 @@ let rec intentCall = (
               )
             }
 
-            let url = makeUrl(confirmParam.return_url)
+            let url = PaymentMessageSecurity.makeReturnUrl(confirmParam.return_url)
             if isLegacyClientSecretFlow {
               url.searchParams.set("payment_intent_client_secret", clientSecret)
             }
@@ -1025,7 +1025,7 @@ let rec intentCall = (
   ->catch(err => {
     Promise.make((resolve, _) => {
       try {
-        let url = makeUrl(confirmParam.return_url)
+        let url = PaymentMessageSecurity.makeReturnUrl(confirmParam.return_url)
         if isLegacyClientSecretFlow {
           url.searchParams.set("payment_intent_client_secret", clientSecret)
         }

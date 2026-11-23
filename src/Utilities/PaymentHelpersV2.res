@@ -45,7 +45,7 @@ let intentCall = (
     ~bodyStr,
   )
   ->then(res => {
-    let url = makeUrl(confirmParam.return_url)
+    let url = PaymentMessageSecurity.makeReturnUrl(confirmParam.return_url)
     url.searchParams.set("status", "failed")
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
@@ -124,7 +124,7 @@ let intentCall = (
             | _ => "CARD"
             }
 
-            let url = makeUrl(confirmParam.return_url)
+            let url = PaymentMessageSecurity.makeReturnUrl(confirmParam.return_url)
             url.searchParams.set("status", intent.authenticationDetails.status)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
@@ -230,7 +230,7 @@ let intentCall = (
   ->catch(err => {
     Promise.make((resolve, _) => {
       try {
-        let url = makeUrl(confirmParam.return_url)
+        let url = PaymentMessageSecurity.makeReturnUrl(confirmParam.return_url)
         url.searchParams.set("status", "failed")
         let _exceptionMessage = err->formatException
 
