@@ -14,6 +14,7 @@ let make = (
   ~sessionTokensDataPromise: ref<promise<JSON.t>>,
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~clientListDataPromise: ref<promise<JSON.t>>,
+  ~onPaymentContextChange: unit => unit=() => (),
 ) => {
   let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =
@@ -34,7 +35,7 @@ let make = (
       ~sessionTokensDataPromise,
       ~sdkConfigsDataPromise,
       ~clientListDataPromise,
-      ~iframes=iframeRef.contents,
+      ~getIframes=() => iframeRef.contents,
       ~callback,
       ~publishableKey,
       ~sdkSessionId,
@@ -45,6 +46,7 @@ let make = (
       ~selectorString=localSelectorString,
       ~shouldWaitForReady=false,
       ~logger,
+      ~onPaymentContextChange,
     )
   }
 

@@ -2,13 +2,12 @@ name: Playwright PR Checks
 
 # Hermetic Playwright tier: the pull-request gate.
 #
-# Runs `--project=hermetic` in a single job: the SDK and demo shop are served
+# Runs `--project=hermetic` across two shards: the SDK and demo shop are served
 # locally by Playwright's `webServer` (ports 9150/9160) and every router call is
 # answered from playwright-tests/recordings/ via context.route(). No sandbox, no
 # secrets, no GitHub environment, and no retries, so a red run means a real
-# regression. Parallelism comes from Playwright workers inside the job; the
-# suite is small enough that sharding across jobs would cost more in repeated
-# installs and builds than it saves.
+# regression. Each shard uses four Playwright workers. The aggregate hermetic
+# job preserves the required check name and succeeds only when both shards pass.
 #
 # The live-sandbox tier runs alongside it in playwright-live-e2e.yml.
 
@@ -44,14 +43,30 @@ env:
   CI: "true"
 
 jobs:
-  hermetic:
-    name: hermetic
+  hermetic-shards:
+    name: hermetic (${{ matrix.shard }}/2)
     runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
-    timeout-minutes: 20
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      REACT_HYPER_JS_PATH: ${{ github.workspace }}/.ci/react-hyper-js
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # Companion PR #25 supplies the widget-ref API exercised by the React
+      # integration specs. Pin its reviewed source so fork PRs need no secrets.
+      - name: Checkout React wrapper
+        uses: actions/checkout@v4
+        with:
+          repository: juspay/react-hyper-js
+          ref: 723616051c362c61b3ac1c35c8c4abf76b45e8d9
+          path: .ci/react-hyper-js
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -62,6 +77,7 @@ jobs:
             package-lock.json
             Hyperswitch-React-Demo-App/package-lock.json
             playwright-tests/package-lock.json
+            .ci/react-hyper-js/package-lock.json
 
       - name: Update git submodules
         run: git submodule update --init --recursive
@@ -74,6 +90,13 @@ jobs:
       - name: Install demo app dependencies
         working-directory: ./Hyperswitch-React-Demo-App
         run: npm install
+
+      - name: Build React wrapper
+        working-directory: ./.ci/react-hyper-js
+        run: |
+          npm ci
+          npm run re:build
+          npm run build
 
       # playwright.config.ts would run this itself on load when
       # src/Utilities/TestUtils.bs.js is missing; doing it here keeps the
@@ -117,13 +140,13 @@ jobs:
       # webServer entries start fresh servers instead of reusing any.
       - name: Run hermetic tests
         working-directory: ./playwright-tests
-        run: npx playwright test --project=hermetic --retries=0
+        run: npx playwright test --project=hermetic --retries=0 --shard=${{ matrix.shard }}/2
 
       - name: Upload HTML report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-hermetic
+          name: playwright-report-hermetic-${{ matrix.shard }}
           path: playwright-tests/playwright-report
           if-no-files-found: ignore
           retention-days: 14
@@ -133,7 +156,19 @@ jobs:
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
-          name: traces-hermetic
+          name: traces-hermetic-${{ matrix.shard }}
           path: playwright-tests/test-results
           if-no-files-found: ignore
           retention-days: 7
+
+  hermetic:
+    name: hermetic
+    if: ${{ always() }}
+    needs: hermetic-shards
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
+    timeout-minutes: 5
+    steps:
+      - name: Check all shards passed
+        env:
+          SHARD_RESULT: ${{ needs.hermetic-shards.result }}
+        run: test "$SHARD_RESULT" = success

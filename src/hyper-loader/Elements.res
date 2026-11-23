@@ -28,13 +28,16 @@ let make = (
   ~sdkConfigsDataPromise: ref<promise<JSON.t>>,
   ~clientListDataPromise: ref<promise<JSON.t>>,
   ~confirmPayment: JSON.t => promise<JSON.t>,
-  ~onSubmitResponse: JSON.t => unit,
+  ~onSubmitResponse: (Nullable.t<Dom.element>, JSON.t) => unit,
   ~isTrustedPaymentMessage: Types.event => bool,
   ~isTrustedRedirectMessage: Types.event => bool,
   ~onFullscreenCreated: (Dom.element, JSON.t) => unit,
+  ~paymentContextFrames: option<ref<array<Nullable.t<Dom.element>>>>=?,
+  ~onPaymentContextChange: unit => unit=() => (),
 ) => {
   try {
     let iframeRef = []
+    let elementsInstanceId = generateRandomString(16)
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let makeEventListenerTracker = LoggerUtils.makeEventListenerTrackerFactory(~logger)
@@ -81,7 +84,7 @@ let make = (
       ~eventName=PRELOAD_SDK_WITH_PARAMS,
     )
 
-    let localSelectorString = "hyper-preMountLoader-iframe"
+    let localSelectorString = `hyper-preMountLoader-iframe-${elementsInstanceId}`
 
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
@@ -98,11 +101,6 @@ let make = (
     )
 
     let isTaxCalculationEnabled = ref(false)
-
-    // Only payment element iframes — used for overlay during updateIntent.
-    // Other widgets (CVC, expressCheckout, etc.) don't handle overlay removal
-    // and don't send the "ready" signal, so they must be excluded.
-    let paymentElementIframeRef: array<Nullable.t<Dom.element>> = []
 
     let isSdkParamsEnabled = preloadSDKWithParams->Dict.toArray->Array.length > 0
 
@@ -147,11 +145,12 @@ let make = (
     sessionTokensDataPromise.contents = initialSessionTokensPromise
     sdkConfigsDataPromise.contents = initialSdkConfigsPromise
     clientListDataPromise.contents = initialClientListPromise
+    onPaymentContextChange()
 
     let sdkOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
     // A merchant can reuse a container id after unmounting. Correlate top-window
     // wallet replies with the actual iframe, so an old session cannot reach its replacement.
-    let walletRoutes: WeakMap.t<Dom.element, string> = WeakMap.make()
+    let walletRoutes = WidgetRegistry.walletRoutes
     let walletRouteId = iframe =>
       iframe
       ->Nullable.toOption
@@ -165,6 +164,10 @@ let make = (
         }
       })
       ->Option.getOr("")
+    let addFrameMessageListener = (mountedIframeRef, handler, activity) =>
+      mountedIframeRef->Nullable.toOption->Option.forEach(frame =>
+        WidgetRegistry.addMessageListener(frame, handler, activity)
+      )
     let addWalletMessageListener = (mountedIframeRef, handler, activity, ~allowSelf=false) => {
       let routeId = walletRouteId(mountedIframeRef)
       let listenerId =
@@ -211,7 +214,7 @@ let make = (
         ->Option.map(Window.Element.isConnected)
         ->Option.getOr(false)
       ) {
-        addSmartEventListener("message", handleTrusted, `${activity}-${listenerId}`)
+        addFrameMessageListener(mountedIframeRef, handleTrusted, `${activity}-${listenerId}`)
       }
     }
 
@@ -234,23 +237,30 @@ let make = (
         let json = event.data->anyTypeToJson
         let dict = json->getDictFromJson
         if isTrustedPaymentMessage(event) && dict->getBool("isPaze", false) {
-          let componentName = dict->getString("componentName", "payment")
           let msg = [("data", json)]->Dict.fromArray
-          handleIframePostMessageForWallets(
-            msg,
-            componentName,
-            mountedIframeRef,
-            ~iframes=iframeRef,
-            ~targetOrigin=sdkOrigin,
-          )
+          mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
         }
       }
     }
 
     let forwardPaymentMethodsToIframe = (mountedIframeRef, ~disableSavedPaymentMethods) => {
       clientListDataPromise.contents->Promise.then(json => {
-        addSmartEventListener("message", onPlaidCallback(mountedIframeRef), "onPlaidCallback")
-        addSmartEventListener("message", onPazeCallback(mountedIframeRef), "onPazeCallback")
+        let forwardOwnedOverlay = callback =>
+          (event: Types.event) => {
+            if WidgetRegistry.ownsOverlaySource(event.source, mountedIframeRef) {
+              callback(event)
+            }
+          }
+        addFrameMessageListener(
+          mountedIframeRef,
+          forwardOwnedOverlay(onPlaidCallback(mountedIframeRef)),
+          `onPlaidCallback-${walletRouteId(mountedIframeRef)}`,
+        )
+        addFrameMessageListener(
+          mountedIframeRef,
+          forwardOwnedOverlay(onPazeCallback(mountedIframeRef)),
+          `onPazeCallback-${walletRouteId(mountedIframeRef)}`,
+        )
 
         let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
           ~paymentMethodListValue=json
@@ -370,7 +380,8 @@ let make = (
       setIframeRef(ref)
     }
     let getElement = componentName => {
-      savedPaymentElement->Dict.get(componentName)
+      WidgetRegistry.getMountedElement(iframeRef, componentName)
+      ->Option.orElse(savedPaymentElement->Dict.get(componentName))
     }
     let update = newOptions => {
       let newOptionsDict = newOptions->getDictFromJson
@@ -412,8 +423,10 @@ let make = (
       if isUpdateIntentInProgress.contents {
         updateIntentInProgressResponse()
       } else {
+        let getUpdateFrames = () =>
+          paymentContextFrames->Option.mapOr(iframeRef, frames => frames.contents)->connectedFrames
         // Show overlay only on payment element iframes (CVC/expressCheckout don't handle overlay)
-        setOverlayLoading(paymentElementIframeRef, true)
+        setOverlayLoading(getUpdateFrames()->paymentFrames, true)
 
         let response = await performUpdateIntent(
           ~isUpdateIntentInProgress,
@@ -422,7 +435,7 @@ let make = (
           ~sessionTokensDataPromise,
           ~sdkConfigsDataPromise,
           ~clientListDataPromise,
-          ~iframes=iframeRef,
+          ~getIframes=getUpdateFrames,
           ~callback,
           ~publishableKey,
           ~sdkSessionId,
@@ -431,8 +444,9 @@ let make = (
           ~isTestMode,
           ~isSdkParamsEnabled,
           ~selectorString=localSelectorString,
-          ~shouldWaitForReady=paymentElementIframeRef->Array.length > 0,
+          ~shouldWaitForReady=true,
           ~logger,
+          ~onPaymentContextChange,
         )
 
         // Only forward data and update tax calculation if updateIntent succeeded
@@ -455,7 +469,7 @@ let make = (
 
           // Forward fresh data to all Elements iframes (reusing existing forward functions)
           let _ = await Promise.all(
-            iframeRef->Array.map(iframe => {
+            getUpdateFrames()->Array.map(iframe => {
               Promise.all([
                 forwardPaymentMethodsToIframe(iframe, ~disableSavedPaymentMethods=false),
                 forwardSessionTokensDataToIframe(iframe),
@@ -466,7 +480,7 @@ let make = (
         }
 
         // Always hide overlay on payment element iframes
-        setOverlayLoading(paymentElementIframeRef, false)
+        setOverlayLoading(getUpdateFrames()->paymentFrames, false)
 
         response
       }
@@ -496,14 +510,6 @@ let make = (
       | "paymentMethodsManagement"
       | "payment" => ()
       | str => Console.warn(`Unknown Key: ${str} type in create`)
-      }
-
-      // Wrap setElementIframeRef so payment element iframes are also tracked separately
-      let setIframeRefForComponent = ref => {
-        setElementIframeRef(ref)
-        if componentType === "payment" {
-          paymentElementIframeRef->Array.push(ref)->ignore
-        }
       }
 
       let mountPostMessage = (
@@ -569,11 +575,11 @@ let make = (
             ("isTestMode", isTestMode->JSON.Encode.bool),
             (
               "isPaymentButtonHandlerProvided",
-              LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
+              LoaderPaymentElement.hasPaymentButtonHandler(mountedIframeRef)->JSON.Encode.bool,
             ),
             (
               "isPaymentCompleteHandlerProvided",
-              LoaderPaymentElement.isPaymentCompleteHandlerProvided.contents->JSON.Encode.bool,
+              LoaderPaymentElement.hasPaymentCompleteHandler(mountedIframeRef)->JSON.Encode.bool,
             ),
           ]->Dict.fromArray
 
@@ -1003,6 +1009,7 @@ let make = (
               resolve(JSON.Encode.null)
             } else {
               onSubmitResponse(
+                mountedIframeRef,
                 [
                   ("submitSuccessful", true->JSON.Encode.bool),
                   ("data", json),
@@ -1025,6 +1032,7 @@ let make = (
                 Utils.replaceRootHref(url, redirectionFlags)
               }
               onSubmitResponse(
+                mountedIframeRef,
                 [
                   ("submitSuccessful", false->JSON.Encode.bool),
                   ("error", err->anyTypeToJson),
@@ -1064,7 +1072,12 @@ let make = (
               err->handleErrorResponse
               resolve()
             })
-            ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+            ->finally(_ =>
+              messageCurrentWindow([
+                ("fullscreen", false->JSON.Encode.bool),
+                ("iframeId", selectorString->JSON.Encode.string),
+              ])
+            )
           }
 
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
@@ -1099,6 +1112,7 @@ let make = (
                 resolve(JSON.Encode.null)
               } else {
                 onSubmitResponse(
+                  mountedIframeRef,
                   [
                     ("submitSuccessful", false->JSON.Encode.bool),
                     ("error", err->anyTypeToJson),
@@ -1108,7 +1122,12 @@ let make = (
                 resolve(err->anyTypeToJson)
               }
             })
-            ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+            ->finally(_ =>
+              messageCurrentWindow([
+                ("fullscreen", false->JSON.Encode.bool),
+                ("iframeId", selectorString->JSON.Encode.string),
+              ])
+            )
           }
 
           switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
@@ -1128,7 +1147,14 @@ let make = (
         }
 
         let handlePollStatusMessage = (ev: Types.event) => {
-          if isTrustedRedirectMessage(ev) {
+          let fromWidget =
+            mountedIframeRef
+            ->Nullable.toOption
+            ->Option.mapOr(false, frame => ev.source === frame->Window.contentWindow)
+          if (
+            isTrustedRedirectMessage(ev) &&
+            (fromWidget || WidgetRegistry.ownsOverlaySource(ev.source, mountedIframeRef))
+          ) {
             processPollStatusMessage(ev)
           }
         }
@@ -1138,7 +1164,11 @@ let make = (
           "onApplePayMount",
           ~allowSelf=true,
         )
-        addSmartEventListener("message", handlePollStatusMessage, "onPollStatusMsg")
+        addFrameMessageListener(
+          mountedIframeRef,
+          handlePollStatusMessage,
+          `onPollStatusMsg-${selectorString}`,
+        )
         addWalletMessageListener(
           mountedIframeRef,
           handleGooglePayThirdPartyFlow,
@@ -1765,16 +1795,16 @@ let make = (
       let paymentElement = LoaderPaymentElement.make(
         componentType,
         newOptions,
-        setIframeRefForComponent,
-        iframeRef,
+        setElementIframeRef,
         mountPostMessage,
         ~appearance,
         ~redirectionFlags: JotaiAtomTypes.redirectionFlags,
         ~logger=Some(logger),
         ~confirmPayment,
         ~eventListenerTracker,
-        ~isTrustedPaymentMessage,
         ~onFullscreenCreated,
+        ~getClientSecret=() => clientSecretRef.contents,
+        ~ownerId=elementsInstanceId,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
@@ -1799,7 +1829,7 @@ let make = (
         cardFormRef := Some(group)
         group
       }
-    {
+    let elements = {
       getElement,
       update,
       fetchUpdates,
@@ -1807,6 +1837,8 @@ let make = (
       updateIntent,
       createCardForm,
     }
+    WidgetRegistry.registerHandle(elements, () => iframeRef->Array.filterMap(Nullable.toOption))
+    elements
   } catch {
   | e => {
       Sentry.captureException(e)

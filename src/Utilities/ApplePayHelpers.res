@@ -76,9 +76,10 @@ let startApplePaySession = (
   ~isTaxCalculationEnabled=false,
   ~sdkAuthorization=None,
   ~onCancel=?,
+  ~sdkHandleIsThere=false,
+  ~walletRoutingId="",
 ) => {
   open Promise
-  let sdkHandleIsThere = LoaderPaymentElement.isPaymentButtonHandlerProvided.contents
   let ssn = applePaySession(3, paymentRequest)
   switch applePaySessionRef.contents->Nullable.toOption {
   | Some(session) =>
@@ -97,6 +98,7 @@ let startApplePaySession = (
       sdkHandleIsThere,
       ~parentOrigin=Window.Location.origin,
       ~parentWindow=window,
+      ~walletRoutingId,
     )
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)

@@ -347,8 +347,10 @@ test.describe("Payment message compatibility @hermetic-only", () => {
     );
     const overlay = page.frameLocator("#orca-fullscreen").locator("body");
     await expect(overlay).toBeAttached();
-    // As on main, a later confirmation takes over the response listener.
+    // A duplicate attempt cannot replace the active operation's listener.
     await confirm("compatSecondResult");
+    await expect.poll(() => result("compatSecondResult"))
+      .toHaveProperty("error.type", "confirmation_in_progress");
     await overlay.evaluate(() =>
       parent.postMessage(
         { submitSuccessful: true, data: { status: "succeeded" } },
@@ -356,7 +358,7 @@ test.describe("Payment message compatibility @hermetic-only", () => {
       ),
     );
     await expect
-      .poll(() => result("compatSecondResult"))
+      .poll(() => result("compatFirstResult"))
       .toEqual({ status: "succeeded" });
     await confirm("compatRetryResult");
     await overlay.evaluate((_el, iframeId) => {

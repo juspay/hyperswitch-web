@@ -179,15 +179,16 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   ))
 
   React.useEffect(() => {
-    // Only the payment element and cardCvc ever emit `ready`, so confirmPayment's ready-gate
-    // stalled forever for card/cardNumber/cardExpiry mounts - emit for these modes too.
-    switch paymentMode->getPaymentMode {
-    | (Card | CardNumberElement | CardExpiryElement) as mode =>
-      SubscriptionEventHooks.emitReady(
-        ~iframeId,
-        ~elementType=CardThemeType.getPaymentModeToString(mode),
-      )
-    | _ => ()
+    // Wait for the mount identity before opening the widget's confirmation gate.
+    if iframeId !== "" && iframeId !== "no-element" {
+      switch paymentMode->getPaymentMode {
+      | (Card | CardNumberElement | CardExpiryElement) as mode =>
+        SubscriptionEventHooks.emitReady(
+          ~iframeId,
+          ~elementType=CardThemeType.getPaymentModeToString(mode),
+        )
+      | _ => ()
+      }
     }
     None
   }, (iframeId, paymentMode))

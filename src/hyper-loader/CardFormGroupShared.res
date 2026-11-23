@@ -221,7 +221,6 @@ let makeFieldElementAndHandle = (
     "paymentMethodsSDK",
     optionsForElement,
     ref => iframeRef := ref,
-    [],
     mountPostMessage,
     ~appearance,
     ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,

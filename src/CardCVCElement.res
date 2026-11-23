@@ -258,10 +258,12 @@ let make = (
   useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=keys.parentURL)
 
   React.useEffect(() => {
-    SubscriptionEventHooks.emitReady(
-      ~iframeId=keys.iframeId,
-      ~elementType=CardThemeType.getPaymentModeToString(paymentType),
-    )
+    if keys.iframeId !== "" && keys.iframeId !== "no-element" {
+      SubscriptionEventHooks.emitReady(
+        ~iframeId=keys.iframeId,
+        ~elementType=CardThemeType.getPaymentModeToString(paymentType),
+      )
+    }
     None
   }, (keys.iframeId, paymentType))
 

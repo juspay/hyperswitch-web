@@ -8,7 +8,10 @@ import { Form } from "react-final-form";
 import GPay from "../../src/Payments/GPay.bs.js";
 import * as Atoms from "../../src/Utilities/JotaiAtoms.bs.js";
 import * as CommonHooks from "../../src/Hooks/CommonHooks.bs.js";
+import * as ManagementElements from "../../src/hyper-loader/PaymentMethodsManagementElements.bs.js";
 import * as Elements from "../../src/hyper-loader/Elements.bs.js";
+import * as Hyper from "../../src/hyper-loader/Hyper.bs.js";
+import * as EventListenerManager from "../../src/Utilities/EventListenerManager.bs.js";
 import * as LoggerUtils from "../../src/Utilities/LoggerUtils.bs.js";
 import * as PaymentHelpers from "../../src/Utilities/PaymentHelpers.bs.js";
 import clientList from "../recordings/base/client-list.json";
@@ -66,6 +69,10 @@ declare global {
   }
 }
 
+export function makeHyper(publishableKey = "pk_snd_review", options?: { isForceInit?: boolean }) {
+  return Hyper.make(publishableKey, options, undefined);
+}
+
 export function makeElements() {
   const logs: EventListenerLog[] = [];
   const ownedFrames: HTMLIFrameElement[] = [];
@@ -113,8 +120,44 @@ export function makeElements() {
   return { elements, logs };
 }
 
+export function makeManagementElements() {
+  return ManagementElements.make({}, () => {}, "pms_test", "test-session", "pk_snd_test", "", undefined, {}, "");
+}
+
 export function notifyMounted(id: string): void {
   notifyElementMessage(id, { iframeMounted: true });
+}
+
+export function walletOverlayListenerCount(): number {
+  return Object.keys(EventListenerManager.eventListenerMap).filter(
+    (name) =>
+      name.startsWith("onPlaidCallback-") || name.startsWith("onPazeCallback-"),
+  ).length;
+}
+
+export async function resolvePreMount(): Promise<void> {
+  const iframe = document.querySelector<HTMLIFrameElement>(
+    'iframe[id*="hyper-preMountLoader-iframe-"]',
+  )!;
+  const send = (data: object) =>
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data,
+        source: iframe.contentWindow,
+        origin: new URL(iframe.src).origin,
+      }),
+    );
+  send({ preMountLoaderIframeMountedCallback: true });
+  await Promise.resolve();
+  await Promise.resolve();
+  for (const [data, response] of [
+    ["client_list", clientList.routes[0].body],
+    ["session_tokens", { session_token: [] }],
+    ["sdk_configs", {}],
+  ])
+    send({ data, response });
+  await Promise.resolve();
+  await Promise.resolve();
 }
 
 export function notifyElementMessage(

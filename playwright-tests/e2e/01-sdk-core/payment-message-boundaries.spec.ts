@@ -770,8 +770,14 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
     const receiver = page
       .frames()
       .find((frame) => frame.url().includes("componentName=cardCvc"))!;
+    const receiverId = await receiver.frameElement().then(el => el.getAttribute("id"));
+    await receiver.evaluate(iframeId => parent.postMessage({
+      fullscreen: true, iframeId, param: "paymentloader", metadata: {},
+    }, "*"), receiverId!.replace("orca-payment-element-iframeRef-", ""));
+    const ownedOverlay = page.frameLocator("#orca-fullscreen").locator("body");
+    await expect(ownedOverlay).toBeAttached();
     const sendPlaid = async () => {
-      await sdk.paymentElement.locator("body").evaluate(async () => {
+      await ownedOverlay.evaluate(async () => {
         const channel = new MessageChannel();
         const delivered = new Promise<void>((resolve) => {
           channel.port1.onmessage = () => resolve();
@@ -909,11 +915,10 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
       const selector = 'iframe[src*="fullscreenType=preMountLoader"]';
       const loader = page.locator(selector);
       await expect(loader).toBeAttached();
-      const frame = page
-        .frames()
-        .find((frame) =>
-          frame.url().includes("fullscreenType=preMountLoader"),
-        )!;
+      const frame = (await (await loader.elementHandle())!.contentFrame())!;
+      // An attached iframe can still be at about:blank; its src alone does not
+      // mean the navigation has committed or the init-script listener exists.
+      await frame.waitForURL(/fullscreenType=preMountLoader/);
       await expect
         .poll(() => frame.evaluate(() => window.boundaryPrefetchRequest))
         .toBe(true);
@@ -1141,6 +1146,9 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
       waitForReady: true,
     });
     await page.evaluate((clientSecret) => {
+      const node = document.createElement("div");
+      node.id = "boundary-one-click";
+      document.querySelector(".mainContainer")?.replaceChildren(node);
       const widget = (
         window as unknown as { HyperMethod: SessionHyper }
       ).HyperMethod.elements({ clientSecret }).create("payment");
@@ -1151,12 +1159,15 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
             Object.assign(window, { boundaryReleaseClick: resolve }),
           ),
       );
+      widget.mount("#boundary-one-click");
     }, intent.clientSecret);
-    await page.evaluate(() =>
-      window.postMessage(
+    const oneClickFrame = page.frameLocator("#orca-payment-element-iframeRef-boundary-one-click");
+    await expect(oneClickFrame.locator("body")).toContainText("Card");
+    await oneClickFrame.locator("body").evaluate(() =>
+      parent.postMessage(
         {
-          hyperApplePayButtonClicked: true,
-          paymentRequest: {
+          applePayButtonClicked: true,
+          applePayPaymentRequest: {
             countryCode: "US",
             currencyCode: "USD",
             merchantCapabilities: ["supports3DS"],
@@ -1165,7 +1176,7 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
           },
           applePayPresent: { session_token_data: {} },
         },
-        location.origin,
+        "*",
       ),
     );
     await expect
@@ -1241,6 +1252,9 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
     await page.evaluate((clientSecret) => {
       const counts: Record<string, number> = {};
       Object.assign(window, { boundaryCallbackCounts: counts });
+      const node = document.createElement("div");
+      node.id = "boundary-callback-widget";
+      document.body.appendChild(node);
       const widget = (
         window as unknown as { HyperMethod: SessionHyper }
       ).HyperMethod.elements({ clientSecret }).create("payment");
@@ -1261,6 +1275,7 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
           counts[name]++;
         });
       }
+      widget.mount("#boundary-callback-widget");
     }, intent.clientSecret);
     await page.evaluate((clientSecret) => {
       const node = document.createElement("div");
@@ -1278,6 +1293,14 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
         .frameLocator("#orca-payment-element-iframeRef-boundary-callback-field")
         .locator("#card-number"),
     ).toBeVisible();
+    await expect(page.frameLocator("#orca-payment-element-iframeRef-boundary-callback-widget").locator("body")).toBeAttached();
+    await expect.poll(() => page.evaluate(() =>
+      (window as unknown as { boundaryCallbackCounts: Record<string, number> }).boundaryCallbackCounts.ready,
+    )).toBe(1);
+    await page.evaluate(() => {
+      const counts = (window as unknown as { boundaryCallbackCounts: Record<string, number> }).boundaryCallbackCounts;
+      for (const key of Object.keys(counts)) counts[key] = 0;
+    });
     const payloads = [
       {
         oneClickConfirmTriggered: true,
@@ -1291,7 +1314,7 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
       { paymentComplete: true },
       { confirmTriggered: true },
       { eventName: "surchargeInfo" },
-    ].map((data) => ({ ...data, elementType: "payment" }));
+    ].map((data) => ({ ...data, elementType: "payment", iframeId: "boundary-callback-widget" }));
     for (const origin of ["https://untrusted.example.test", SDK_URL]) {
       for (const payload of payloads)
         await sendFromSibling(page, payload, undefined, origin);
@@ -1307,27 +1330,24 @@ test.describe("Remaining payment message boundaries @hermetic-only", () => {
         ),
       ),
     ).toEqual(Array(10).fill(0));
-    const widgetFrame = page
-      .frames()
-      .find((frame) =>
-        frame.url().includes("/index.html?componentName=payment"),
-      )!;
+    const widgetFrame = page.frameLocator("#orca-payment-element-iframeRef-boundary-callback-widget").locator("body");
     await widgetFrame.evaluate(() => {
       parent.postMessage(
         {
           oneClickConfirmTriggered: true,
           walletClickRequestId: "boundary-click",
           elementType: "payment",
+          iframeId: "boundary-callback-widget",
         },
         "*",
       );
-      parent.postMessage({ ready: true, elementType: "payment" }, "*");
+      parent.postMessage({ ready: true, elementType: "payment", iframeId: "boundary-callback-widget" }, "*");
       parent.postMessage(
         { paymentComplete: true, elementType: "payment" },
         "*",
       );
       parent.postMessage(
-        { eventName: "surchargeInfo", elementType: "payment" },
+        { eventName: "surchargeInfo", elementType: "payment", iframeId: "boundary-callback-widget" },
         "*",
       );
     });
