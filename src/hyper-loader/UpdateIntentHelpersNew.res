@@ -122,6 +122,35 @@ let forwardPromiseToIframes = (iframes, promise, key) => {
 
 // --- PreMountLoader iframe management ---
 
+let mountPreMountLoaderFrame = (~selectorString, ~queryParams, ~title=?) => {
+  let url = URLModule.makeUrl(`${ApiEndpoint.sdkDomainUrl}/index.html`)
+  queryParams->Array.forEach(((key, value)) => url.searchParams.set(key, value))
+
+  let wrapper = Window.createElement("div")
+  wrapper->Window.setAttribute("id", `orca-element-${selectorString}`)
+  wrapper->Window.setAttribute("style", "height: 0px; width: 0px; display: none;")
+  wrapper->Window.setAttribute("class", "preMountLoader")
+
+  let fullscreenSlot = Window.createElement("div")
+  fullscreenSlot->Window.setAttribute("id", `orca-fullscreen-iframeRef-${selectorString}`)
+  wrapper->Window.appendChildElement(fullscreenSlot)
+
+  let iframe = Window.createElement("iframe")
+  let iframeId = `orca-payment-element-iframeRef-${selectorString}`
+  iframe->Window.setAttribute("id", iframeId)
+  iframe->Window.setAttribute("name", iframeId)
+  title->Option.forEach(value => iframe->Window.setAttribute("title", value))
+  iframe->Window.setAttribute("src", url.href)
+  iframe->Window.setAttribute("allow", "*")
+  iframe->Window.setAttribute("style", "outline: none;")
+  wrapper->Window.appendChildElement(iframe)
+
+  let container = Window.createElement("div")
+  container->Window.appendChildElement(wrapper)
+  Window.body->Window.appendChild(container)
+  iframe->Nullable.make
+}
+
 // Mounts a hidden preMountLoader iframe that makes API calls, returns the iframe element.
 // Removes any existing preMountLoader with the same selectorString before creating a new one.
 let mountPreMountLoaderIframe = (
@@ -152,24 +181,22 @@ let mountPreMountLoaderIframe = (
   let merchantHostname = Window.Location.hostname
   let isTestModeValue = isTestMode->getStringFromBool
   let isSdkParamsEnabledValue = isSdkParamsEnabled->getStringFromBool
-  let iframeDivHtml = `<div id="orca-element-${selectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
-      <div id="orca-fullscreen-iframeRef-${selectorString}"></div>
-        <iframe
-          id="orca-payment-element-iframeRef-${selectorString}"
-          name="orca-payment-element-iframeRef-${selectorString}"
-          title="Orca Payment Element Frame"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${currentClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}&isTestMode=${isTestModeValue}&isSdkParamsEnabled=${isSdkParamsEnabledValue}&sdkAuthorization=${currentSdkAuthorization}"
-          allow="*"
-          name="orca-payment"
-          style="outline: none;"
-        ></iframe>
-      </div>`
-  let iframeDiv = Window.createElement("div")
-  iframeDiv->Window.innerHTML(iframeDivHtml)
-  Window.body->Window.appendChild(iframeDiv)
-
-  let elem = Window.querySelector(`#orca-payment-element-iframeRef-${selectorString}`)
-  elem
+  mountPreMountLoaderFrame(
+    ~selectorString,
+    ~title="Orca Payment Element Frame",
+    ~queryParams=[
+      ("fullscreenType", componentType),
+      ("publishableKey", publishableKey),
+      ("clientSecret", currentClientSecret),
+      ("sessionId", sdkSessionId),
+      ("endpoint", endpoint),
+      ("merchantHostname", merchantHostname),
+      ("customPodUri", customPodUri),
+      ("isTestMode", isTestModeValue),
+      ("isSdkParamsEnabled", isSdkParamsEnabledValue),
+      ("sdkAuthorization", currentSdkAuthorization),
+    ],
+  )
 }
 
 // Removes the preMountLoader iframe and its wrapper div from the DOM.
