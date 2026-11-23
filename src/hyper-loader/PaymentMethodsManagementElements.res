@@ -66,7 +66,7 @@ let make = (
         )->Nullable.isNullable
       ) {
         let componentType = "preMountLoader"
-        PreMountLoaderFrame.make(
+        UpdateIntentHelpersNew.mountPreMountLoaderFrame(
           ~selectorString=localSelectorString,
           ~queryParams=[
             ("fullscreenType", componentType),
