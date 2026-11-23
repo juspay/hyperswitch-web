@@ -1740,14 +1740,20 @@ let makeOneClickHandlerPromise = (sdkHandleIsThere, ~parentOrigin, ~parentWindow
   })
 }
 
+@new external makeRandomBytes: int => array<int> = "Uint8Array"
+@val @scope("crypto") external getRandomValues: array<int> => array<int> = "getRandomValues"
+
 let generateRandomString = length => {
   let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   let result = ref("")
-  let charactersLength = characters->String.length
-  Int.range(0, length)->Array.forEach(_ => {
-    let charIndex = mod((Math.random() *. 100.0)->Float.toInt, charactersLength)
-    result := result.contents ++ characters->String.charAt(charIndex)
-  })
+  while result.contents->String.length < length {
+    let bytes = getRandomValues(makeRandomBytes(length))
+    bytes->Array.forEach(byte => {
+      if byte < 252 && result.contents->String.length < length {
+        result := result.contents ++ characters->String.charAt(mod(byte, 36))
+      }
+    })
+  }
   result.contents
 }
 

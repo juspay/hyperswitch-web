@@ -1,6 +1,6 @@
 open Utils
 
-let randomIdSuffix = (): string => Math.random()->Float.toString->String.slice(~start=2, ~end=8)
+let randomIdSuffix = (): string => generateRandomString(8)
 
 let uniqueId = (~prefix: string): string =>
   `${prefix}-${Date.now()->Float.toString}-${randomIdSuffix()}`

@@ -33,7 +33,7 @@ let nextEpoch = () => {
   lastEpoch.contents
 }
 
-let makeInstanceId = () => `${Date.now()->Float.toString}-${Math.random()->Float.toString}`
+let makeInstanceId = () => Utils.generateRandomString(32)
 
 // The other frames embedded by this iframe's parent. Reading them needs no
 // access to the parent document, so the merchant page cannot intercept it.
