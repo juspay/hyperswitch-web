@@ -13,25 +13,14 @@ let logApi = (
   ~logCategory: HyperLoggerTypes.logCategory=API,
   ~isPaymentSession: bool=false,
 ) => {
-  let (value, _) = switch apiLogType {
-  | Request => ([("url", url->JSON.Encode.string)], [])
-  | Response => (
-      [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)],
-      [("response", data)],
-    )
-  | NoResponse => (
-      [("url", url->JSON.Encode.string), ("statusCode", 504->JSON.Encode.int), ("response", data)],
-      [("response", data)],
-    )
-  | Err => (
-      [
-        ("url", url->JSON.Encode.string),
-        ("statusCode", statusCode->JSON.Encode.int),
-        ("response", data),
-      ],
-      [("response", data)],
-    )
-  | Method => ([("method", paymentMethod->JSON.Encode.string)], [("result", result)])
+  let _ = (data, result)
+  let safeUrl = url->String.replaceRegExp(/[?#][\s\S]*$/, "")
+  let value = switch apiLogType {
+  | Request => [("url", safeUrl->JSON.Encode.string)]
+  | Response => [("url", safeUrl->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)]
+  | NoResponse => [("url", safeUrl->JSON.Encode.string), ("statusCode", 504->JSON.Encode.int)]
+  | Err => [("url", safeUrl->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)]
+  | Method => [("method", paymentMethod->JSON.Encode.string)]
   }
   switch optLogger {
   | Some(logger) =>
@@ -51,7 +40,7 @@ let logApi = (
 let logUserInteracted = (~logger: HyperLoggerTypes.loggerMake, ~event) => {
   let eventName: HyperLoggerTypes.eventName = USER_INTERACTED
   logger.setLogInfo(
-    ~value=[("event", event->JSON.Encode.string)]->CommonUtils.getJsonStringFromArrayOfJson,
+    ~value=[("event", event->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object->JSON.stringify,
     ~eventName,
   )
 }
@@ -61,7 +50,7 @@ let logElementLoading = (~logger: HyperLoggerTypes.loggerMake, ~componentType) =
   logger.setLogInfo(
     ~value=[
       ("componentType", componentType->JSON.Encode.string),
-    ]->CommonUtils.getJsonStringFromArrayOfJson,
+    ]->Dict.fromArray->JSON.Encode.object->JSON.stringify,
     ~eventName,
   )
 }
@@ -88,7 +77,7 @@ let logConfirmTriggered = (
     ~value=[
       ("source", source->confirmTriggerSourceToString->JSON.Encode.string),
       ("paymentMethodType", paymentMethodType->JSON.Encode.string),
-    ]->CommonUtils.getJsonStringFromArrayOfJson,
+    ]->Dict.fromArray->JSON.Encode.object->JSON.stringify,
     ~eventName,
     ~paymentMethod=paymentMethodType,
   )
@@ -129,7 +118,7 @@ let makeEventListenerLogger = (~logger: HyperLoggerTypes.loggerMake, ~componentT
       [
         ("componentType", componentType->JSON.Encode.string),
         ("eventListeners", eventListeners->Array.map(JSON.Encode.string)->JSON.Encode.array),
-      ]->CommonUtils.getJsonStringFromArrayOfJson
+      ]->Dict.fromArray->JSON.Encode.object->JSON.stringify
     logger.setLogInfo(~value, ~eventName=PAYMENT_ELEMENT_EVENT_LISTENERS, ~logType=INFO)
   }
 

@@ -66,7 +66,7 @@ let intentCall = (
               }
               handleLogging(
                 ~optLogger,
-                ~value=data->JSON.stringify,
+                ~value="Payment confirmation failed",
                 ~eventName=PAYMENT_FAILED,
                 ~paymentMethod,
               )
