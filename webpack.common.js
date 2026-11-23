@@ -79,7 +79,7 @@ const authorizedImageSources = [
   "https://www.paypalobjects.com",
   "https://googleads.g.doubleclick.net",
   "https://www.google.com",
-  "data: *",
+  "data:",
   // Add other trusted sources here
 ];
 
@@ -144,7 +144,7 @@ const sdkEnv = getEnvVariable("sdkEnv", "local");
 const hyperswitchStack = getEnvVariable("HYPERSWITCH_STACK", "");
 const isEUStack = hyperswitchStack === "eu";
 const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
-const DISABLE_CSP = getEnvVariable("DISABLE_CSP", "false") === "true";
+const DISABLE_CSP = sdkEnv === "local" && getEnvVariable("DISABLE_CSP", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const isPciCompliant = getEnvVariable("IS_PCI_COMPLIANT", "true") === "true";
@@ -223,6 +223,23 @@ const confirmEndPoint =
 
 const logEndpoint = envLoggingUrl;
 
+const cspConnectOrigin = (value) => {
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" && !(sdkEnv === "local" && url.protocol === "http:")) {
+      throw new Error("Invalid CSP connect origin");
+    }
+    if (url.username || url.password) throw new Error("Invalid CSP connect origin");
+    return url.origin;
+  } catch {
+    throw new Error("Invalid CSP connect origin");
+  }
+};
+const configuredConnectSources = [logEndpoint, backendEndPoint]
+  .filter(Boolean)
+  .map(cspConnectOrigin);
+
 const loggingLevel = "DEBUG";
 const maxLogsPushedPerEventName = 100;
 
@@ -299,9 +316,7 @@ module.exports = (publicPath = "auto") => {
                 frame-src ${authorizedFrameSources.join(" ")};
                 img-src ${authorizedImageSources.join(" ")};
                 font-src ${authorizedFontSources.join(" ")};
-                connect-src ${authorizedConnectSources.join(
-                  " "
-                )} ${logEndpoint} ${backendEndPoint};
+                connect-src ${authorizedConnectSources.join(" ")} ${configuredConnectSources.join(" ")};
       `,
             },
           },
@@ -324,9 +339,7 @@ module.exports = (publicPath = "auto") => {
           frame-src ${authorizedFrameSources.join(" ")};
           img-src ${authorizedImageSources.join(" ")};
           font-src ${authorizedFontSources.join(" ")};
-          connect-src ${authorizedConnectSources.join(
-            " "
-          )} ${logEndpoint} ${backendEndPoint};
+          connect-src ${authorizedConnectSources.join(" ")} ${configuredConnectSources.join(" ")};
           `,
             },
           },
