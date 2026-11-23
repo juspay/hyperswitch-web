@@ -37,9 +37,17 @@ module CommonUtils = {
     | list{} => ""
     | _ =>
       params
-      ->List.map(((key, value)) => `${key}=${value}`)
+      ->List.map(((key, value)) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       ->List.reduce("", (acc, param) => acc === "" ? `?${param}` : `${acc}&${param}`)
     }
+}
+
+let encodePathSegment = segment => {
+  if segment === "." || segment === ".." {
+    Js.Exn.raiseError("Invalid API path segment")
+  } else {
+    encodeURIComponent(segment)
+  }
 }
 
 let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
@@ -107,21 +115,23 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
 
   let path = switch apiCallType {
   | FetchSessions => "payments/session_tokens"
-  | FetchThreeDsAuth => `payments/${paymentIntentId}/3ds/authentication`
-  | CalculateTax => `payments/${paymentIntentId}/calculate_tax`
+  | FetchThreeDsAuth => `payments/${encodePathSegment(paymentIntentId)}/3ds/authentication`
+  | CalculateTax => `payments/${encodePathSegment(paymentIntentId)}/calculate_tax`
   | CreatePaymentMethod => "payment_methods"
-  | RetrievePaymentIntent => `payments/${paymentIntentId}`
+  | RetrievePaymentIntent => `payments/${encodePathSegment(paymentIntentId)}`
   | CallAuthLink => "payment_methods/auth/link"
   | CallAuthExchange => "payment_methods/auth/exchange"
-  | RetrieveStatus => `poll/status/${pollIdVal}`
-  | ConfirmPayout => `payouts/${payoutIdVal}/confirm`
+  | RetrieveStatus => `poll/status/${encodePathSegment(pollIdVal)}`
+  | ConfirmPayout => `payouts/${encodePathSegment(payoutIdVal)}/confirm`
   | FetchEnabledAuthnMethodsToken =>
-    `authentication/${authenticationIdVal}/enabled_authn_methods_token`
-  | FetchEligibilityCheck => `authentication/${authenticationIdVal}/eligibility-check`
-  | FetchAuthenticationSync => `authentication/${merchantId}/${authenticationIdVal}/sync`
-  | FetchPaymentMethodEligibility => `payments/${paymentIntentId}/eligibility`
+    `authentication/${encodePathSegment(authenticationIdVal)}/enabled_authn_methods_token`
+  | FetchEligibilityCheck =>
+    `authentication/${encodePathSegment(authenticationIdVal)}/eligibility-check`
+  | FetchAuthenticationSync =>
+    `authentication/${encodePathSegment(merchantId)}/${encodePathSegment(authenticationIdVal)}/sync`
+  | FetchPaymentMethodEligibility => `payments/${encodePathSegment(paymentIntentId)}/eligibility`
   | FetchSdkConfigs => "v1/sdk/configs/web/sdk_config.json"
-  | FetchClientList => `payments/${paymentIntentId}/client`
+  | FetchClientList => `payments/${encodePathSegment(paymentIntentId)}/client`
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`

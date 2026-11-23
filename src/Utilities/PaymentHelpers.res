@@ -503,9 +503,11 @@ let rec intentCall = (
                 ~isConfirmCall=isConfirm,
               )
               let clientSecretParam = isLegacyClientSecretFlow
-                ? `?client_secret=${clientSecret}`
+                ? `?client_secret=${encodeURIComponent(clientSecret)}`
                 : ""
-              let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
+              let retrieveUri = `${endpoint}/payments/${APIUtils.encodePathSegment(
+                  paymentIntentId,
+                )}${clientSecretParam}`
               intentCall(
                 ~parentOrigin?,
                 ~fetchApi,
@@ -1068,8 +1070,12 @@ let rec intentCall = (
             ~publishableKey=confirmParam.publishableKey,
             ~isConfirmCall=isConfirm,
           )
-          let clientSecretParam = isLegacyClientSecretFlow ? `?client_secret=${clientSecret}` : ""
-          let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
+          let clientSecretParam = isLegacyClientSecretFlow
+            ? `?client_secret=${encodeURIComponent(clientSecret)}`
+            : ""
+          let retrieveUri = `${endpoint}/payments/${APIUtils.encodePathSegment(
+              paymentIntentId,
+            )}${clientSecretParam}`
           intentCall(
             ~parentOrigin?,
             ~fetchApi,
@@ -1146,10 +1152,12 @@ let usePaymentSync = (
 
       let clientSecretUriStr = switch keys.sdkAuthorization->Utils.getNonEmptyOption {
       | Some(_) => ""
-      | None => `&client_secret=${clientSecret}`
+      | None => `&client_secret=${encodeURIComponent(clientSecret)}`
       }
 
-      let uri = `${endpoint}/payments/${paymentIntentId}?force_sync=true${clientSecretUriStr}`
+      let uri = `${endpoint}/payments/${APIUtils.encodePathSegment(
+          paymentIntentId,
+        )}?force_sync=true${clientSecretUriStr}`
 
       let paymentSync = () => {
         intentCall(
@@ -1237,7 +1245,7 @@ let useCompleteAuthorizeHandler = (~isOneClickWallet=false) => {
         ~clientSecret=cs,
         ~sdkAuthorization,
       )
-      let uri = `${endpoint}/payments/${paymentIntentId}/complete_authorize`
+      let uri = `${endpoint}/payments/${APIUtils.encodePathSegment(paymentIntentId)}/complete_authorize`
 
       let finalHeaders = switch headers {
       | Some(h) => h
@@ -1410,7 +1418,7 @@ let usePaymentIntent = (~isOneClickWallet=false, optLogger, paymentType) => {
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let path = `payments/${paymentIntentId}/confirm`
+      let path = `payments/${APIUtils.encodePathSegment(paymentIntentId)}/confirm`
 
       let uri = `${endpoint}/${path}`
 
@@ -1792,7 +1800,7 @@ let paymentIntentForPaymentSession = (
     ~publishableKey=confirmParam.publishableKey,
     ~isConfirmCall=true,
   )
-  let uri = `${endpoint}/payments/${paymentIntentId}/confirm`
+  let uri = `${endpoint}/payments/${APIUtils.encodePathSegment(paymentIntentId)}/confirm`
   let headers = switch sdkAuthorization->Utils.getNonEmptyOption {
   | Some(sdkAuth) => [("Authorization", sdkAuth)]
   | None => [("api-key", confirmParam.publishableKey)]
@@ -2107,7 +2115,7 @@ let usePostSessionTokens = (
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let uri = `${endpoint}/payments/${paymentIntentId}/post_session_tokens`
+      let uri = `${endpoint}/payments/${APIUtils.encodePathSegment(paymentIntentId)}/post_session_tokens`
 
       let callIntent = body => {
         let contentLength = body->String.length->Int.toString
