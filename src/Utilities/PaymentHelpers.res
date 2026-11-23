@@ -579,10 +579,8 @@ let rec intentCall = (
             if isLegacyClientSecretFlow {
               url.searchParams.set("payment_intent_client_secret", clientSecret)
             }
-            url.searchParams.set(
-              "payment_id",
-              Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
-            )
+            let paymentId = Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization)
+            url.searchParams.set("payment_id", paymentId)
             url.searchParams.set("status", intent.status)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
@@ -593,7 +591,7 @@ let rec intentCall = (
               | (Paypal, false, _) =>
                 if !isPaymentSession {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnPaymentCompleteMessage()
+                    handleOnPaymentCompleteMessage(~paymentId)
                   }
 
                   postSubmitResponse(~jsonData=data, ~url=url.href)
@@ -602,7 +600,7 @@ let rec intentCall = (
                   }
                 } else if confirmParam.redirect === Some("always") {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnPaymentCompleteMessage()
+                    handleOnPaymentCompleteMessage(~paymentId)
                   } else {
                     handleOpenUrl(url.href)
                   }
@@ -619,7 +617,7 @@ let rec intentCall = (
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
                   closePaymentLoaderIfAny()
-                  handleOnPaymentCompleteMessage()
+                  handleOnPaymentCompleteMessage(~paymentId)
                 } else {
                   handleOpenUrl(url.href)
                 }
