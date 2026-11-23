@@ -4,15 +4,42 @@ let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
 
 let apiEndPoint: ref<option<string>> = ref(None)
 
+let isAllowedEndpoint = str => {
+  switch PaymentMessageSecurity.httpUrl(str) {
+  | Some(url) =>
+    let configuredEndpoint = PaymentMessageSecurity.httpUrl(GlobalVars.backendEndPoint)
+    let confirmEndpoint = PaymentMessageSecurity.httpUrl(GlobalVars.confirmEndPoint)
+    let matchesConfiguredEndpoint = (endpoint: option<PaymentMessageSecurity.redirectUrl>) =>
+      endpoint->Option.map(configured =>
+        url.origin === configured.origin && url.pathname === configured.pathname
+      )->Option.getOr(false)
+    let isHyperswitchEndpoint =
+      (url.origin === "https://checkout.hyperswitch.io" ||
+        url.origin === "https://beta.hyperswitch.io" ||
+        url.origin === "https://dev.hyperswitch.io" ||
+        url.origin === "https://eu.hyperswitch.io") && url.pathname === "/api"
+    (url.protocol === "https:" || GlobalVars.isLocal && url.protocol === "http:") &&
+      (matchesConfiguredEndpoint(configuredEndpoint) ||
+        matchesConfiguredEndpoint(confirmEndpoint) ||
+        isHyperswitchEndpoint) &&
+      url.hash === "" && url.search === "" && url.href === str
+  | None => false
+  }
+}
+
 let setApiEndPoint = str => {
-  apiEndPoint := Some(str)
+  if isAllowedEndpoint(str) {
+    apiEndPoint := Some(str)
+  } else {
+    Console.error("Invalid API endpoint")
+  }
 }
 
 let getFullscreenIframeUrl = (~sdkDomain=sdkDomainUrl, ~fullscreenType) => {
   let fullscreenType = fullscreenType === "" ? "fullscreen" : fullscreenType
   let url = `${sdkDomain}/fullscreenIndex.html?fullscreenType=${fullscreenType}`
   switch apiEndPoint.contents {
-  | Some(endpoint) if endpoint !== "" => `${url}&endpoint=${endpoint}`
+  | Some(endpoint) if endpoint !== "" => `${url}&endpoint=${encodeURIComponent(endpoint)}`
   | _ => url
   }
 }

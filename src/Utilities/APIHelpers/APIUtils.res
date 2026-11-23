@@ -77,6 +77,9 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
     customBackendBaseUrl->Option.getOr(
       ApiEndpoint.getApiEndPoint(~publishableKey=publishableKeyVal),
     )
+  let baseUrl = ApiEndpoint.isAllowedEndpoint(baseUrl)
+    ? baseUrl
+    : ApiEndpoint.getApiEndPoint(~publishableKey=publishableKeyVal)
 
   let isRetrieveIntent = switch apiCallType {
   | RetrievePaymentIntent => true
