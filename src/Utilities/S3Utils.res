@@ -62,7 +62,13 @@ let getCountryStateData = async (
 ) => {
   let normalizedLocale = getNormalizedLocale(locale)
   let timestamp = Date.now()->Float.toString
-  let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
+  let safeLocale =
+    /^[a-zA-Z]{2,8}([-_][a-zA-Z0-9]{1,8})*$/->RegExp.test(normalizedLocale)
+      ? normalizedLocale
+      : "en"
+  let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${encodeURIComponent(
+      safeLocale,
+    )}?v=${timestamp}`
 
   try {
     await fetchCountryStateFromS3(endpoint)
