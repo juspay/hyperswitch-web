@@ -157,7 +157,6 @@ let buildFieldMountConfig = (
   ->Array.concat([
     ("sdkSessionId", sdkSessionId->JSON.Encode.string),
     ("customPodUri", ""->JSON.Encode.string),
-    ("parentURL", "*"->JSON.Encode.string),
     ("sdkHandleOneClickConfirmPayment", false->JSON.Encode.bool),
     ("launchTime", Date.now()->JSON.Encode.float),
     ("loggerSource", loggerSource->JSON.Encode.string),

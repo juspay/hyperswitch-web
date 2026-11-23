@@ -7,8 +7,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (configAtom, setConfig) = Jotai.useAtom(configAtom)
   let setIsConfigReady = Jotai.useSetAtom(isConfigReady)
   let (keys, setKeys) = Jotai.useAtom(keys)
-  let parentOriginRef = React.useRef(None)
   let hasConfiguredEndpointRef = React.useRef(false)
+  let isParentMessage = PaymentMessageHooks.useParentMessageCheck(~isInitialization=dict =>
+    dict->Utils.getDictIsSome("paymentElementCreate")
+  )
   let (paymentMethodList, setPaymentMethodList) = Jotai.useAtom(paymentMethodList)
   let setSdkConfigs = Jotai.useSetAtom(sdkConfigs)
   let setSdkConfigsValue = Jotai.useSetAtom(PaymentUtils.sdkConfigsValue)
@@ -339,7 +341,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         // every keystroke through them. See CardFormPortHandshake.
         if dict->getDictIsSome("paymentElementCreate") {
           // Pin the browser-provided origin of the direct host, never a payload's wildcard.
-          parentOriginRef.current = Some(ev.origin)
           dict->Dict.set("parentURL", ev.origin->JSON.Encode.string)
           setKeys(prev => {...prev, parentURL: ev.origin})
 
@@ -756,11 +757,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     }
     let handleHostMessage = (ev: Window.event) => {
-      let isExpectedOrigin =
-        parentOriginRef.current
-        ->Option.map(origin => ev.origin === origin)
-        ->Option.getOr(true)
-      if ev.source === iframeParent && ev.origin !== "null" && isExpectedOrigin {
+      if isParentMessage(ev) {
         handleFun(ev)
       }
     }

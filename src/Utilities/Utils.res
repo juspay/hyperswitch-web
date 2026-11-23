@@ -27,23 +27,28 @@ open ErrorUtils
 
 let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
 
-let messageWindow = (window, ~targetOrigin="*", messageArr) => {
-  window->postMessage(messageArr->getJsonFromArrayOfJson, targetOrigin)
+let messageWindow = (window, ~targetOrigin="", messageArr) => {
+  if PaymentMessageSecurity.isConcreteOrigin(targetOrigin) {
+    window->postMessage(messageArr->getJsonFromArrayOfJson, targetOrigin)
+  }
 }
 
-let messageTopWindow = (~targetOrigin="*", messageArr) => {
-  topParent->messageWindow(~targetOrigin, messageArr)
+let messageTopWindow = (~targetOrigin="", messageArr) => {
+  let origin = targetOrigin === "" ? PaymentMessageSecurity.parentOrigin() : targetOrigin
+  topParent->messageWindow(~targetOrigin=origin, messageArr)
 }
 
-let messageParentWindow = (~targetOrigin="*", messageArr) => {
-  iframeParent->messageWindow(~targetOrigin, messageArr)
+let messageParentWindow = (~targetOrigin="", messageArr) => {
+  let origin = targetOrigin === "" ? PaymentMessageSecurity.parentOrigin() : targetOrigin
+  iframeParent->messageWindow(~targetOrigin=origin, messageArr)
 }
 
-let messageCurrentWindow = (~targetOrigin="*", messageArr) => {
-  window->messageWindow(~targetOrigin, messageArr)
+let messageCurrentWindow = (~targetOrigin="", messageArr) => {
+  let origin = targetOrigin === "" ? Window.Location.origin : targetOrigin
+  window->messageWindow(~targetOrigin=origin, messageArr)
 }
 
-let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
+let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="") => {
   messageParentWindow(
     [
       ("focus", true->JSON.Encode.bool),
@@ -54,11 +59,11 @@ let handleOnFocusPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
   )
 }
 
-let handleOnPaymentCompleteMessage = (~targetOrigin="*") => {
+let handleOnPaymentCompleteMessage = (~targetOrigin="") => {
   messageParentWindow([("paymentComplete", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
-let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
+let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="") => {
   messageParentWindow(
     [
       ("blur", true->JSON.Encode.bool),
@@ -69,18 +74,18 @@ let handleOnBlurPostMessage = (~iframeId, ~elementType, ~targetOrigin="*") => {
   )
 }
 
-let handleOnClickPostMessage = (~targetOrigin="*", ev) => {
+let handleOnClickPostMessage = (~targetOrigin="", ev) => {
   messageParentWindow(
     [("clickTriggered", true->JSON.Encode.bool), ("event", ev->JSON.stringify->JSON.Encode.string)],
     ~targetOrigin,
   )
 }
-let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false) => {
+let handleOnConfirmPostMessage = (~targetOrigin="", ~isOneClick=false) => {
   let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
   messageParentWindow([(message, true->JSON.Encode.bool)], ~targetOrigin)
 }
 
-let handleBeforeRedirectPostMessage = (~targetOrigin="*") => {
+let handleBeforeRedirectPostMessage = (~targetOrigin="") => {
   messageTopWindow([("disableBeforeUnloadEventListener", true->JSON.Encode.bool)], ~targetOrigin)
 }
 

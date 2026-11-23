@@ -56,6 +56,7 @@ let querySelectorAll = selector => querySelectorAllNodes(selector)->nodeListToAr
 @module("/package.json") @val external packageJson: packageJson = "default"
 @val @scope("document") external body: body = "body"
 @val @scope("document") external head: Dom.element = "head"
+@val @scope("document") external referrer: string = "referrer"
 @send external appendChildElement: (Dom.element, Dom.element) => unit = "appendChild"
 @send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
 @send external showPopover: Dom.element => unit = "showPopover"
@@ -210,26 +211,33 @@ module Element = {
 }
 
 /* Helper Functions */
-let sendPostMessage = (element, message) => {
-  element->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
+let isConcreteOrigin = origin => origin !== "" && origin !== "*" && origin !== "null"
+
+let sendPostMessage = (element, message, ~targetOrigin) => {
+  if isConcreteOrigin(targetOrigin) {
+    element->postMessage(message->JSON.Encode.object->JSON.stringify, targetOrigin)
+  }
 }
 
-let sendPostMessageJSON = (element, message) => {
-  element->postMessageJSON(message, GlobalVars.targetOrigin)
+let sendPostMessageJSON = (element, message, ~targetOrigin) => {
+  if isConcreteOrigin(targetOrigin) {
+    element->postMessageJSON(message, targetOrigin)
+  }
 }
 
 let iframePostMessage = (
   iframeRef: nullable<Dom.element>,
   message,
-  ~targetOrigin=GlobalVars.targetOrigin,
+  ~targetOrigin,
 ) => {
   switch iframeRef->Nullable.toOption {
-  | Some(ref) =>
+  | Some(ref) if isConcreteOrigin(targetOrigin) =>
     try {
       ref->contentWindow->postMessage(message->JSON.Encode.object->JSON.stringify, targetOrigin)
     } catch {
     | _ => ()
     }
+  | Some(_) => ()
   | None => Console.error("This element does not exist or is not mounted yet.")
   }
 }

@@ -797,7 +797,7 @@ let getCardBrandInvalidError = (~cardBrand, ~localeString: LocaleStringTypes.loc
   }
 }
 
-let emitExpiryDate = (~targetOrigin="*", formattedExpiry) =>
+let emitExpiryDate = (~targetOrigin="", formattedExpiry) =>
   Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)], ~targetOrigin)
 
 let emitIsFormReadyForSubmission = isFormReadyForSubmission =>

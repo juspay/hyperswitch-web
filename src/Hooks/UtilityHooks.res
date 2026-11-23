@@ -77,7 +77,7 @@ let useSendEventsToParent = (~isTrustedChild, eventsToSendToParent) => {
         ->Array.filter(((key, _)) => eventsToSendToParent->Array.includes(key))
 
       if isFromChildFrame && isTrustedChild(ev) && allowedEvents->Array.length > 0 {
-        Utils.messageParentWindow(allowedEvents)
+        Utils.messageParentWindow(allowedEvents, ~targetOrigin=PaymentMessageSecurity.parentOrigin())
       }
     }
     Window.addEventListener("message", handle)
