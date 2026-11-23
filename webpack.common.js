@@ -149,6 +149,9 @@ const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const isPciCompliant = getEnvVariable("IS_PCI_COMPLIANT", "true") === "true";
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
+const isSentryEnabled = Boolean(
+  process.env.SENTRY_AUTH_TOKEN && process.env.IS_SENTRY_ENABLED === "true"
+);
 const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
@@ -258,6 +261,14 @@ const { isLocal, isIntegrationEnv, isProductionEnv, isSandboxEnv } =
   getEnvironmentType(sdkEnv);
 
 module.exports = (publicPath = "auto") => {
+  const outputPath = isLocal
+    ? path.resolve(__dirname, "dist")
+    : path.resolve(
+        __dirname,
+        "dist",
+        isEUStack ? `${sdkEnv}_eu` : sdkEnv,
+        sdkVersionValue
+      );
   const entries = {
     app: "./index.js",
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
@@ -365,16 +376,16 @@ module.exports = (publicPath = "auto") => {
     );
   }
 
-  if (
-    process.env.SENTRY_AUTH_TOKEN &&
-    process.env.IS_SENTRY_ENABLED === "true"
-  ) {
+  if (isSentryEnabled) {
     plugins.push(
       sentryWebpackPlugin({
         org: "hyperswitch",
         project: "hyperswitch-web-react",
         authToken: process.env.SENTRY_AUTH_TOKEN,
         url: process.env.SENTRY_URL,
+        sourcemaps: {
+          filesToDeleteAfterUpload: isLocal ? undefined : [`${outputPath}/**/*.map`],
+        },
         release: {
           name: "0.3",
         },
@@ -384,16 +395,13 @@ module.exports = (publicPath = "auto") => {
 
   return {
     mode: isLocal ? "development" : "production",
-    devtool: isLocal ? "cheap-module-source-map" : "source-map",
+    devtool: isLocal
+      ? "cheap-module-source-map"
+      : isSentryEnabled
+        ? "hidden-source-map"
+        : false,
     output: {
-      path: isLocal
-        ? path.resolve(__dirname, "dist")
-        : path.resolve(
-            __dirname,
-            "dist",
-            isEUStack ? `${sdkEnv}_eu` : sdkEnv,
-            sdkVersionValue
-          ),
+      path: outputPath,
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,
