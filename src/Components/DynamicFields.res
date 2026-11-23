@@ -26,6 +26,7 @@ module FormBody = {
     ~formRef: React.ref<option<ReactFinalForm.Form.formMethods>>,
     ~languagePreferenceFields: array<fieldConfig>,
     ~missingRequiredFieldsFiltered: array<fieldConfig>,
+    ~persistableFields: array<fieldConfig>,
     ~dynamicFieldsOutsideBilling: array<fieldConfig>,
     ~dynamicFieldsInsideBilling: array<fieldConfig>,
     ~allEmailFields: array<fieldConfig>,
@@ -40,6 +41,7 @@ module FormBody = {
     let {config, themeObj, localeString} = Jotai.useAtomValue(configAtom)
     let setAreRequiredFieldsValid = Jotai.useSetAtom(areRequiredFieldsValid)
     let setAreRequiredFieldsEmpty = Jotai.useSetAtom(areRequiredFieldsEmpty)
+    let setUserDynamicFieldsValues = Jotai.useSetAtom(userDynamicFieldsValues)
 
     let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
     let isRenderDynamicFieldsInsideBilling = dynamicFieldsInsideBilling->Array.length > 0
@@ -63,6 +65,17 @@ module FormBody = {
         )
 
         setRequiredFieldsBody(_ => flatValues)
+
+        // Persist field values so they survive the remount on payment-method-type switch.
+        setUserDynamicFieldsValues(prev => {
+          let next = prev->Dict.copy
+          persistableFields->Array.forEach(field => {
+            let path = field.confirmRequestWritePath
+            next->Dict.set(path, Utils.getString(flatValues, path, ""))
+          })
+          next
+        })
+
         syncEmitAddressAtoms(flatValues)
 
         let isEmpty = missingRequiredFieldsFiltered->Array.some(field => {
@@ -165,6 +178,7 @@ let make = (
   let {localeString} = Jotai.useAtomValue(configAtom)
   let {billingAddress, redirectionInfo, defaultValues} = Jotai.useAtomValue(optionAtom)
   let syncEmitAddressAtoms = DynamicFieldsUtils.useSyncEmitAddressAtoms()
+  let cachedUserDynamicFieldsValues = Jotai.useAtomValue(userDynamicFieldsValues)
 
   let intentData = paymentMethodListValue.intent_data.intentDataObject
 
@@ -189,6 +203,22 @@ let make = (
     None
   }, [requiredFields])
 
+  let rendersVisibleInput = (field: fieldConfig) =>
+    switch field.fieldRenderType {
+    | CardNumber
+    | Cvc
+    | CardExpiryMonth
+    | CardExpiryYear
+    | CardNetwork
+    | LanguagePreference => false
+    | Dropdown => field.dropdownOptions->Option.getOr([])->Array.length > 0
+    | _ => true
+    }
+
+  let persistableFields = React.useMemo(() => {
+    missingRequiredFields->Array.filter(field => rendersVisibleInput(field))
+  }, [missingRequiredFields])
+
   let missingRequiredFieldsFiltered = React.useMemo(() => {
     let firstEmailPath =
       missingRequiredFields
@@ -203,30 +233,36 @@ let make = (
       ->Option.map(fieldConfig => fieldConfig.confirmRequestWritePath)
 
     // remove fields that would render as React.null:
-    //   - Any card-data fields (card_exp_month, card_exp_year, card_network, etc.)
     //   - Duplicate Email / CardHolderName fields (only the first path is rendered)
-    //   - Dropdown fields with no options (would render React.null anyway)
-    missingRequiredFields->Array.filter(field => {
+    // (Card-data fields, hidden dropdowns, etc. are already excluded from persistableFields.)
+    persistableFields->Array.filter(field =>
       switch field.fieldRenderType {
-      | CardNumber
-      | Cvc
-      | CardExpiryMonth
-      | CardExpiryYear
-      | CardNetwork
-      | LanguagePreference => false
-      | Dropdown =>
-        let options = field.dropdownOptions->Option.getOr([])
-        options->Array.length > 0
       | Email => firstEmailPath === Some(field.confirmRequestWritePath)
       | CardHolderName => firstCardHolderNamePath === Some(field.confirmRequestWritePath)
       | _ => true
       }
-    })
-  }, [missingRequiredFields])
+    )
+  }, (missingRequiredFields, persistableFields))
 
   let initialValuesWithBillingDataOverride = React.useMemo(() => {
     DynamicFieldsUtils.applyBillingDetailsOverride(initialValues, defaultValues.billingDetails)
   }, (initialValues, defaultValues.billingDetails))
+
+  let initialValuesWithUserInputOverride = React.useMemo(() => {
+    let merged = initialValuesWithBillingDataOverride
+    persistableFields->Array.forEach(field =>
+      switch cachedUserDynamicFieldsValues->Dict.get(field.confirmRequestWritePath) {
+      | Some(value) =>
+        Utils.setNested(
+          merged,
+          field.confirmRequestWritePath->String.split("."),
+          value->JSON.Encode.string,
+        )
+      | None => ()
+      }
+    )
+    merged
+  }, (initialValuesWithBillingDataOverride, cachedUserDynamicFieldsValues, persistableFields))
 
   let isInsideBillingField = (field: fieldConfig) =>
     field.fieldRenderType === Email ||
@@ -321,7 +357,7 @@ let make = (
   <>
     <RenderIf condition={!isSavedCardFlow && shouldRenderForm}>
       <ReactFinalForm.Form
-        initialValues={Some(initialValuesWithBillingDataOverride)}
+        initialValues={Some(initialValuesWithUserInputOverride)}
         onSubmit={_values => ()}
         render={formProps =>
           <FormBody
@@ -329,6 +365,7 @@ let make = (
             formRef
             languagePreferenceFields
             missingRequiredFieldsFiltered
+            persistableFields
             dynamicFieldsOutsideBilling
             dynamicFieldsInsideBilling
             allEmailFields
