@@ -138,7 +138,7 @@ let mountPreMountLoaderFrame = (~selectorString, ~queryParams, ~title=?) => {
   let iframe = Window.createElement("iframe")
   let iframeId = `orca-payment-element-iframeRef-${selectorString}`
   iframe->Window.setAttribute("id", iframeId)
-  iframe->Window.setAttribute("name", "orca-payment")
+  iframe->Window.setAttribute("name", iframeId)
   title->Option.forEach(value => iframe->Window.setAttribute("title", value))
   iframe->Window.setAttribute("src", url.href)
   iframe->Window.setAttribute("allow", "*")
