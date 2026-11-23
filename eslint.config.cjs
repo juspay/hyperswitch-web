@@ -3,10 +3,15 @@ const reactHooks = require("eslint-plugin-react-hooks");
 
 module.exports = [
   {
-    files: ["src/**/*.{js,jsx,ts,tsx}"],
+    files: ["**/*.{js,jsx,ts,tsx}"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
     },
     plugins: {
       promise,
@@ -15,7 +20,10 @@ module.exports = [
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "promise/catch-or-return": "error",
-      "no-console": ["error", { allow: ["warn", "error", "info", "log", "debug"] }],
+      "no-console": [
+        "error",
+        { allow: ["warn", "error", "info", "log", "debug"] },
+      ],
       "no-useless-escape": "off",
     },
   },
