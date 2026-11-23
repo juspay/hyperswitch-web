@@ -88,19 +88,6 @@ let ensureWalletOneClickListener = (logger, ~ownerId, ~isTrustedMessage) => {
   )
 }
 
-// ─── Shared iframe HTML builder ────────────────────────────────────────────────
-// Produces the raw <iframe> HTML fragment used by the `mount` function.
-let buildIframeHtmlString = (~iframeId: string, ~iframeSrc: string, ~additionalStyle: string) =>
-  `<iframe
-   id="${iframeId}"
-   name="${iframeId}"
-   src="${iframeSrc}"
-   allow="payment *"
-   title="Orca Payment Element Frame"
-   sandbox="allow-scripts allow-popups allow-same-origin allow-forms"
-   style="border: 0px; ${additionalStyle} outline: none;"
-   width="100%"
-></iframe>`
 // Multi-instance support: rendezvous queues that pair handler-only instances
 // (C, created at React render time, calls on()) with mounting instances
 // (O, created in useEffect, calls mount()).
@@ -714,16 +701,43 @@ let make = (
             ->appendParam("fieldName", fieldName)
             ->appendParam("surfaceFamily", surfaceFamily)
             ->appendParam("groupId", groupId)
-          let iframeDiv = `<div id="orca-${elementIframeWrapperDivId}-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">
-          <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
-          ${buildIframeHtmlString(
-              ~iframeId=iframeElementId,
-              ~iframeSrc,
-              ~additionalStyle=additionalIframeStyle,
-            )}
-          </div>`
-          elem->Window.innerHTML(iframeDiv)
-          setPaymentIframeRef(Window.querySelector(`#${iframeElementId}`))
+          // ─── Shared iframe HTML builder ────────────────────────────────────────────────
+          // Produces the iframe used by the `mount` function without interpolating HTML.
+          let wrapper = Window.createElement("div")
+          wrapper->Window.setAttribute(
+            "id",
+            `orca-${elementIframeWrapperDivId}-${localSelectorString}`,
+          )
+          wrapper->Window.setAttribute("style", "height: auto; font-size: 0;")
+          wrapper->Window.setAttribute(
+            "class",
+            `${componentType} ${currentClass.contents} ${classesBase}`,
+          )
+          let fullscreenSlot = Window.createElement("div")
+          fullscreenSlot->Window.setAttribute(
+            "id",
+            `orca-fullscreen-iframeRef-${localSelectorString}`,
+          )
+          wrapper->Window.appendChildElement(fullscreenSlot)
+          let iframe = Window.createElement("iframe")
+          iframe->Window.setAttribute("id", iframeElementId)
+          iframe->Window.setAttribute("name", iframeElementId)
+          iframe->Window.setAttribute("src", iframeSrc)
+          iframe->Window.setAttribute("allow", "payment *")
+          iframe->Window.setAttribute("title", "Orca Payment Element Frame")
+          iframe->Window.setAttribute(
+            "sandbox",
+            "allow-scripts allow-popups allow-same-origin allow-forms",
+          )
+          iframe->Window.setAttribute(
+            "style",
+            `border: 0px; ${additionalIframeStyle} outline: none;`,
+          )
+          iframe->Window.setAttribute("width", "100%")
+          wrapper->Window.appendChildElement(iframe)
+          elem->Window.innerHTML("")
+          elem->Window.appendChildElement(wrapper)
+          setPaymentIframeRef(iframe->Nullable.make)
 
           let elem = Window.querySelector(`#${iframeElementId}`)
           switch elem->Nullable.toOption {
