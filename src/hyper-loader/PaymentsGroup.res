@@ -323,7 +323,7 @@ let makeCardForm = (~config: groupConfig): Types.cardForm => {
     let savedCardTokenRef = ref(
       options->getDictFromJson->getDictFromDict("savedCard")->getString("paymentToken", ""),
     )
-    let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
+    let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick, _currentOptions) => {
       coordinator->postFieldMountConfig(
         ~fieldIframe=mountedIframeRef,
         ~mountConfig=buildMountConfig(~options, ~fieldId),

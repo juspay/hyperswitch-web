@@ -218,6 +218,7 @@ let make = (
         mountedIframeRef,
         selectorString,
         _sdkHandleOneClickConfirmPayment,
+        newOptions,
       ) => {
         open Promise
 

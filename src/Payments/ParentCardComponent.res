@@ -425,7 +425,7 @@ let make = (
   ))
 
   let mountPostMessage = React.useCallback(
-    (mountedIframeRef, selectorString, _sdkHandleOneClickConfirmPayment) => {
+    (mountedIframeRef, selectorString, _sdkHandleOneClickConfirmPayment, _currentOptions) => {
       let (
         currentOptionsJson,
         currentPaymentOptionsJson,

@@ -158,10 +158,10 @@ let make = (
   | _ => baseStyles
   }
 
-  <div className="w-full">
+  // Keep width measurement available when a wallets-only filter hides the empty header.
+  <div className="w-full" ref={payOptionsRef->ReactDOM.Ref.domRef}>
     <div
-      ref={payOptionsRef->ReactDOM.Ref.domRef}
-      className
+      className={`${className} empty:hidden`}
       dataTestId={TestUtils.paymentMethodListTestId}
       style>
       {cardOptionDetails

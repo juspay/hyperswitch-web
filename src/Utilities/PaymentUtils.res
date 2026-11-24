@@ -242,6 +242,52 @@ let filterSavedMethodsByWalletReadiness = (
   )
 }
 
+let shouldShowDefaultCard = (~paymentMethodOrder, ~allowedPaymentMethods) =>
+  Utils.checkPriorityList(paymentMethodOrder) && allowedPaymentMethods->Option.isNone
+
+// A rendered form (notably card) can represent several backend types. It is
+// allowed only when at least one available pair for that form matches.
+let isRenderedPaymentMethodAllowed = (
+  ~allowedPaymentMethods,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+  name,
+) =>
+  allowedPaymentMethods->Option.isNone ||
+  paymentMethodListValue.payment_methods->Array.some(method =>
+    method.payment_method_types->Array.some(type_ =>
+      PaymentType.isPaymentMethodAllowed(
+        allowedPaymentMethods,
+        ~paymentMethod=method.payment_method,
+        ~paymentMethodType=Some(type_.payment_method_type),
+      ) &&
+      PaymentHelpers.getConstructedPaymentMethodName(
+        ~paymentMethod=method.payment_method,
+        ~paymentMethodType=type_.payment_method_type,
+      ) === name
+    )
+  )
+
+let canShowClickToPay = (~allowedPaymentMethods, ~paymentMethodListValue) =>
+  // Provider cards have no backend credit/debit type. Only an unrestricted
+  // card entry can include them in a type-aware saved-method allowlist.
+  PaymentType.isPaymentMethodAllowed(
+    allowedPaymentMethods,
+    ~paymentMethod="card",
+    ~paymentMethodType=None,
+  ) && isRenderedPaymentMethodAllowed(~allowedPaymentMethods, ~paymentMethodListValue, "card")
+
+let filterSavedMethodsByAllowlist = (
+  savedMethods: array<PaymentType.customerMethods>,
+  ~allowedPaymentMethods,
+) =>
+  savedMethods->Array.filter(savedMethod =>
+    PaymentType.isPaymentMethodAllowed(
+      allowedPaymentMethods,
+      ~paymentMethod=savedMethod.paymentMethod,
+      ~paymentMethodType=savedMethod.paymentMethodType,
+    )
+  )
+
 let useGetPaymentMethodList = (
   ~paymentType: CardThemeType.mode,
   ~sessions,
@@ -254,6 +300,10 @@ let useGetPaymentMethodList = (
 
   let {paymentMethodOrder} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let optionAtomValue = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let showDefaultCard = shouldShowDefaultCard(
+    ~paymentMethodOrder,
+    ~allowedPaymentMethods=optionAtomValue.allowedPaymentMethods,
+  )
 
   let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
 
@@ -315,6 +365,7 @@ let useGetPaymentMethodList = (
     let filteredSaved = switch savedPaymentMethods {
     | Some(methods) =>
       methods
+      ->filterSavedMethodsByAllowlist(~allowedPaymentMethods=optionAtomValue.allowedPaymentMethods)
       ->filterSavedMethodsByHiddenList(
         ~hiddenPaymentMethods=layoutClass.savedMethodCustomization.hiddenPaymentMethods,
       )
@@ -363,12 +414,22 @@ let useGetPaymentMethodList = (
         }
       })
     }
+    let filterAllowed = methods =>
+      methods->Array.filter(name =>
+        name === "saved_methods" ||
+          isRenderedPaymentMethodAllowed(
+            ~allowedPaymentMethods=optionAtomValue.allowedPaymentMethods,
+            ~paymentMethodListValue=pList,
+            name,
+          )
+      )
     (
-      wallets->removeDuplicate->Utils.getWalletPaymentMethod(paymentType),
+      wallets->filterAllowed->removeDuplicate->Utils.getWalletPaymentMethod(paymentType),
       otherOptions
+      ->filterAllowed
       ->removeDuplicate
       ->filterPaymentMethods,
-      otherOptions,
+      otherOptions->filterAllowed,
     )
   }
 
@@ -380,12 +441,13 @@ let useGetPaymentMethodList = (
     | (Loaded(paymentlist), LoadedSavedCards(savedPaymentMethods, _), true) =>
       processPaymentsList(~paymentList=paymentlist, ~savedPaymentMethods=Some(savedPaymentMethods))
     | (SemiLoaded, _, _) =>
-      checkPriorityList(paymentMethodOrder) ? ([], ["card"], []) : ([], [], [])
+      showDefaultCard ? ([], ["card"], []) : ([], [], [])
     | _ => ([], [], [])
     }
   }, (
     methodslist,
     paymentMethodOrder,
+    optionAtomValue.allowedPaymentMethods,
     optionAtomValue.wallets.payPal,
     optionAtomValue.wallets.klarna,
     paymentType,

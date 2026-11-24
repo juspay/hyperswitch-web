@@ -14,11 +14,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let {
     paymentMethodOrder,
+    allowedPaymentMethods,
     layout,
     customerPaymentMethods,
     displaySavedPaymentMethods,
     sdkHandleConfirmPayment,
   } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let showDefaultCard = shouldShowDefaultCard(~paymentMethodOrder, ~allowedPaymentMethods)
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let optionAtomValue = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let paymentMethodList = Jotai.useAtomValue(JotaiAtoms.paymentMethodList)
@@ -58,11 +60,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (areClickToPayUIScriptsLoaded, setAreClickToPayUIScriptsLoaded) = React.useState(_ => false)
 
   let isShowPaymentMethodsDependingOnClickToPay = React.useMemo(() => {
+    PaymentUtils.canShowClickToPay(~allowedPaymentMethods, ~paymentMethodListValue) &&
     (clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length > 0 ||
     clickToPayConfig.isReady->Option.getOr(false) &&
       clickToPayConfig.clickToPayCards->Option.isNone ||
     clickToPayConfig.email !== "") && !isClickToPayAuthenticateError
-  }, (clickToPayConfig, isClickToPayAuthenticateError))
+  }, (clickToPayConfig, isClickToPayAuthenticateError, allowedPaymentMethods, paymentMethodListValue))
 
   let layoutClass = CardUtils.getLayoutClass(layout)
   let {
@@ -110,6 +113,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
         let finalSavedPaymentMethods =
           savedPaymentMethods
+          ->filterSavedMethodsByAllowlist(~allowedPaymentMethods)
           ->Array.copy
           ->filterSavedMethodsByHiddenList(
             ~hiddenPaymentMethods=layoutClass.savedMethodCustomization.hiddenPaymentMethods,
@@ -263,7 +267,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
       setPaymentOptions(_ =>
         [
-          ...checkPriorityList(paymentMethodOrder) ? ["card"] : [],
+          ...showDefaultCard ? ["card"] : [],
           ...paymentOptionsList,
         ]->removeDuplicate
       )
@@ -289,11 +293,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
     | LoadError(_)
     | SemiLoaded =>
-      setPaymentOptions(_ => checkPriorityList(paymentMethodOrder) ? ["card"] : [])
+      setPaymentOptions(_ => showDefaultCard ? ["card"] : [])
     | _ => ()
     }
     None
-  }, (paymentMethodList, walletList, paymentOptionsList, actualList))
+  }, (paymentMethodList, walletList, paymentOptionsList, actualList, allowedPaymentMethods, showDefaultCard))
 
   React.useEffect(() => {
     if !showAllPaymentMethods {
@@ -369,7 +373,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         switch paymentMethodList {
         | SemiLoaded
         | LoadError(_) =>
-          checkPriorityList(paymentMethodOrder) ? "card" : ""
+          showDefaultCard ? "card" : ""
         | Loaded(_) =>
           paymentOptions->Array.includes(selectedOption)
             ? selectedOption
@@ -386,6 +390,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     paymentOptions,
     paymentMethodList,
     selectedOption,
+    showDefaultCard,
   ))
 
   let (cardMounted, setCardMounted) = React.useState(() => false)
@@ -396,10 +401,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (cardMounted, selectedOption))
 
+  let isCardAllowed = isRenderedPaymentMethodAllowed(
+    ~allowedPaymentMethods,
+    ~paymentMethodListValue,
+    "card",
+  )
   let paymentFormElement = {
-    let cardIsActive = selectedOption->PaymentModeType.paymentMode == Card
+    let cardIsActive = selectedOption->PaymentModeType.paymentMode == Card && isCardAllowed
     <>
-      <RenderIf condition=cardMounted>
+      <RenderIf condition={cardMounted && isCardAllowed}>
         <div style={display: cardIsActive ? "" : "none"} ariaHidden={!cardIsActive}>
           <ReadyHooks.Ignored isIgnored={!cardIsActive}>
             <ParentCardComponent
@@ -598,13 +608,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let shouldDisplayPaymentMethodsScreen =
     groupSavedMethodsWithPaymentMethods || groupSavedMethodsSeparately || showPaymentMethodsScreen
 
-  let shouldShowShimmer = clickToPayConfig.isReady->Option.isNone || isLoadingGroupedSavedMethods
+  let isClickToPayPending =
+    PaymentUtils.canShowClickToPay(~allowedPaymentMethods, ~paymentMethodListValue) &&
+    clickToPayConfig.isReady->Option.isNone
+  let shouldShowShimmer = isClickToPayPending || isLoadingGroupedSavedMethods
 
   let shouldRenderPaymentSection =
     !isLoadingGroupedSavedMethods &&
     hasPaymentOrWalletOptions &&
     shouldDisplayPaymentMethodsScreen &&
-    clickToPayConfig.isReady->Option.isSome
+    !isClickToPayPending
 
   let isSavedMethodsScreenShown = !shouldShowShimmer && shouldShowSavedMethodsScreen
   let (reportSavedMethodsPending, isSavedMethodsLoaded) = ReadyHooks.useSection(
@@ -631,7 +644,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   // A wallet in the list may still be deciding whether it can be shown.
   let hasMethodType = methodType =>
     paymentMethodListValue.payment_methods->Array.some(method =>
-      method.payment_method_types->Array.some(type_ => type_.payment_method_type === methodType)
+      method.payment_method_types->Array.some(type_ =>
+        type_.payment_method_type === methodType &&
+        PaymentType.isPaymentMethodAllowed(
+          allowedPaymentMethods,
+          ~paymentMethod=method.payment_method,
+          ~paymentMethodType=Some(methodType),
+        )
+      )
     )
   // The loader only checks Google Pay's availability when it is set to auto.
   let isGooglePayAuto = switch optionAtomValue.wallets.googlePay {
@@ -648,6 +668,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     switch customerPaymentMethods {
     | LoadedSavedCards(savedPaymentMethods, _) =>
       savedPaymentMethods
+      ->filterSavedMethodsByAllowlist(~allowedPaymentMethods)
       ->filterSavedMethodsByHiddenList(
         ~hiddenPaymentMethods=layoutClass.savedMethodCustomization.hiddenPaymentMethods,
       )
@@ -665,6 +686,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   | Loaded(_) => !hasPaymentOrWalletOptions && !isWalletDecisionPending
   | Loading | SemiLoaded => false
   }
+  let hasNoAllowedPaymentMethods =
+    allowedPaymentMethods->Option.isSome &&
+    hasNothingToLoad &&
+    !hasSavedPaymentMethods &&
+    !isShowPaymentMethodsDependingOnClickToPay &&
+    !isSavedWalletDecisionPending
 
   // Progressive loading is ready once any section has loaded, otherwise once all have.
   let isElementReady = if shouldShowShimmer {
@@ -869,25 +896,29 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           }}
         />
       </RenderIf>
-      {switch paymentMethodList {
-      | LoadError(_) =>
-        <RenderIf condition={paymentMethodListValue.payment_methods->Array.length === 0}>
-          <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
-        </RenderIf>
-      | _ =>
-        <RenderIf
-          condition={!displaySavedPaymentMethods &&
-          paymentOptions->Array.length == 0 &&
-          walletOptions->Array.length == 0}>
-          {if isVgsScriptReady {
-            <PaymentElementShimmer />
-          } else {
-            // VGS vault script failed → card was removed and no other method
-            // remains. Surface the standard top-level error instead of an
-            // indefinite shimmer.
+      {if hasNoAllowedPaymentMethods {
+        <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+      } else {
+        switch paymentMethodList {
+        | LoadError(_) =>
+          <RenderIf condition={paymentMethodListValue.payment_methods->Array.length === 0}>
             <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
-          }}
-        </RenderIf>
+          </RenderIf>
+        | _ =>
+          <RenderIf
+            condition={!displaySavedPaymentMethods &&
+            paymentOptions->Array.length == 0 &&
+            walletOptions->Array.length == 0}>
+            {if isVgsScriptReady {
+              <PaymentElementShimmer />
+            } else {
+              // VGS vault script failed → card was removed and no other method
+              // remains. Surface the standard top-level error instead of an
+              // indefinite shimmer.
+              <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+            }}
+          </RenderIf>
+        }
       }}
       <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
         <div className="mt-4">

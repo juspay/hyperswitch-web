@@ -548,7 +548,7 @@ let make = (
     let savedCardDict = options->getDictFromJson->getDictFromDict("savedCard")
     let savedCardBrandRef = ref(savedCardDict->savedCardNetwork)
 
-    let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick) => {
+    let mountPostMessage = (mountedIframeRef, _selectorString, _sdkHandleOneClick, _currentOptions) => {
       coordinator->postFieldMountConfig(
         ~fieldIframe=mountedIframeRef,
         ~mountConfig=buildMountConfig(~options, ~fieldId),

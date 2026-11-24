@@ -187,7 +187,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PaymentMethodsSDK
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
-        setOptionsPayment(prev => {...paymentOptions, subscriptionEvents: prev.subscriptionEvents})
+        setOptionsPayment(prev => {
+          ...paymentOptions,
+          subscriptionEvents: prev.subscriptionEvents,
+          customerPaymentMethods: optionsDict->Dict.get("customerPaymentMethods")->Option.isSome
+            ? paymentOptions.customerPaymentMethods
+            : prev.customerPaymentMethods,
+        })
         optionsCallback(paymentOptions)
       }
     | _ => ()
