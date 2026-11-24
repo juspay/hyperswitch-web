@@ -271,7 +271,9 @@ let make = (
           isPaymentCompleteHandlerProvided := true
           eventHandlerFunc(
             ev => ev.data.paymentComplete,
-            eventHandler->Option.map(eH => _ => eH(Some(eventType->getPaymentCompleteEventData))),
+            eventHandler->Option.map(eH =>
+              data => eH(data->Option.map(data => eventType->getPaymentCompleteEventData(data)))
+            ),
             PaymentComplete,
             `onPaymentComplete-${componentType}-${elementInstanceId}`,
             ~isTrustedMessage,

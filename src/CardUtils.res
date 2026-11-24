@@ -164,23 +164,7 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 let toString = val => val->Int.toString
 
 let getQueryParamsDictforKey = (searchParams, keyName) => {
-  let dict = Dict.make()
-
-  searchParams
-  ->String.split("&")
-  ->Array.forEach(paramStr => {
-    let eqIndex = paramStr->String.indexOf("=")
-
-    if eqIndex != -1 {
-      let len = paramStr->String.length
-      let key = paramStr->String.slice(~start=0, ~end=eqIndex)
-      let value = paramStr->String.slice(~start=eqIndex + 1, ~end=len)
-
-      Dict.set(dict, key, value)
-    }
-  })
-
-  dict->Dict.get(keyName)->Option.getOr("")
+  URLModule.makeSearchParams(searchParams).get(keyName)->Nullable.toOption->Option.getOr("")
 }
 let getCardType = val => {
   switch val {
