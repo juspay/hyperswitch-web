@@ -144,6 +144,7 @@ let make = (
     let mountedIframeRef = ref(Nullable.null)
     let fullscreenIframeRef = ref(Nullable.null)
     // Kept current across update() so the Change listener filters on the latest subscriptions.
+    let currentOptions = ref(options)
     let subscriptionEventsRef = ref(options->getDictFromJson->getStrArray("subscriptionEvents"))
     let iframeOrigin = URLModule.makeUrl(sdkDomainUrl).origin
     let fullscreenOrigin = URLModule.makeUrl(ApiEndpoint.sdkDomainUrl).origin
@@ -420,30 +421,26 @@ let make = (
         subscriptionEventsRef := newOptions->getDictFromJson->getStrArray("subscriptionEvents")
       | None => ()
       }
-      let flatOption = options->flattenObject(true)
+      let flatOption = currentOptions.contents->flattenObject(true)
       let newFlatOption = newOptions->flattenObject(true)
 
-      let keys = flatOption->Dict.keysToArray
-      keys->Array.forEach(key => {
-        switch newFlatOption->Dict.get(key) {
-        | Some(op) => flatOption->Dict.set(key, op)
-        | None => ()
+      let merged = mergeTwoFlattenedJsonDicts(flatOption, newFlatOption)
+      // Arrays (including []) are replacement values, not indexed patches.
+      newOptions
+      ->getDictFromJson
+      ->Dict.toArray
+      ->Array.forEach(((key, value)) => {
+        if value->JSON.Decode.array->Option.isSome || value === JSON.Encode.null {
+          merged->Dict.set(key, value)
         }
       })
-
-      let newEntries = newFlatOption->Dict.toArray
-      newEntries->Array.forEach(entries => {
-        let (key, value) = entries
-        if flatOption->Dict.get(key)->Option.isNone {
-          flatOption->Dict.set(key, value)
-        }
-      })
+      currentOptions := merged->JSON.Encode.object
 
       iframeRef->Array.forEach(iframe => {
         let message =
           [
             ("paymentElementsUpdate", true->JSON.Encode.bool),
-            ("options", flatOption->JSON.Encode.object->unflattenObject->JSON.Encode.object),
+            ("options", currentOptions.contents),
           ]->Dict.fromArray
         iframe->Window.iframePostMessage(message, ~targetOrigin=iframeOrigin)
       })
@@ -493,7 +490,7 @@ let make = (
       let fullscreenParam = ref("")
       let fullscreenMetadata = ref(Dict.make()->JSON.Encode.object)
       let mountedWindow = ref((Nullable.null: Nullable.t<Dom.element>))
-      let optionsDict = options->getDictFromJson
+      let optionsDict = currentOptions.contents->getDictFromJson
       let handle = (ev: Types.event) => {
         let eventDataObject = ev.data->anyTypeToJson
 
@@ -605,7 +602,7 @@ let make = (
                             [
                               ("fullScreenIframeMounted", true->JSON.Encode.bool),
                               ("metadata", fullscreenMetadata.contents),
-                              ("options", options),
+                              ("options", currentOptions.contents),
                               ("appearance", appearance),
                             ]->Dict.fromArray,
                             ~targetOrigin=fullscreenOrigin,
@@ -616,7 +613,7 @@ let make = (
                             [
                               ("fullScreenIframeMounted", true->JSON.Encode.bool),
                               ("metadata", fullscreenMetadata.contents),
-                              ("options", options),
+                              ("options", currentOptions.contents),
                             ]->Dict.fromArray,
                             ~targetOrigin=iframeOrigin,
                           )
@@ -654,7 +651,7 @@ let make = (
                   mainElement->Window.iframePostMessage(
                     [
                       ("fullScreenIframeMounted", false->JSON.Encode.bool),
-                      ("options", options),
+                      ("options", currentOptions.contents),
                     ]->Dict.fromArray,
                     ~targetOrigin=iframeOrigin,
                   )
@@ -674,7 +671,7 @@ let make = (
           ) {
             eventListenerTracker.logger.logOnMount()
           }
-          mountPostMessage(mountedIframe, localSelectorString, sdkHandleOneClickConfirmPayment)
+          mountPostMessage(mountedIframe, localSelectorString, sdkHandleOneClickConfirmPayment, currentOptions.contents)
         }
       }
       // Multi-instance elements need unique listener names per instance.

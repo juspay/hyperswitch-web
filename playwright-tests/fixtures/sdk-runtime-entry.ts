@@ -1,3 +1,6 @@
+import * as PaymentType from "../../src/Types/PaymentType.bs.js";
+import * as PaymentUtils from "../../src/Utilities/PaymentUtils.bs.js";
+import * as PaymentMethodsRecord from "../../src/Payments/PaymentMethodsRecord.bs.js";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { createStore, Provider, type PrimitiveAtom } from "jotai";
@@ -261,4 +264,10 @@ export function mountGooglePay(options: GooglePayOptions): Promise<void> {
       React.createElement(Provider, { store }, React.createElement(WalletHost)),
     );
   });
+}
+
+export function canShowClickToPayForOptions(options: object): boolean {
+  const parsed = PaymentType.itemToObjMapper(options, LoggerUtils.defaultLoggerConfig);
+  const available = PaymentMethodsRecord.itemToObjMapperFromClientList(clientList.routes[0].body);
+  return PaymentUtils.canShowClickToPay(parsed.allowedPaymentMethods, available);
 }
