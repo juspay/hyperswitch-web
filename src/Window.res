@@ -275,3 +275,8 @@ let getRootHostName = () =>
     }
   | false => Location.hostname
   }
+type mutationObserver
+type mutationObserverOptions = {childList: bool, subtree: bool}
+@new external makeMutationObserver: (unit => unit) => mutationObserver = "MutationObserver"
+@send external observeMutations: (mutationObserver, Dom.element, mutationObserverOptions) => unit = "observe"
+@send external disconnectMutations: mutationObserver => unit = "disconnect"

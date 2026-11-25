@@ -335,6 +335,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       try {
         let dict = json->getDictFromJson
 
+        if dict->getDictIsSome("isPaymentCompleteHandlerProvided") {
+          let isCallbackUsedVal = dict->Utils.getBool("isPaymentCompleteHandlerProvided", false)
+          setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
+        }
+        if dict->getDictIsSome("isPaymentButtonHandlerProvided") {
+          let isSDKClick = dict->Utils.getBool("isPaymentButtonHandlerProvided", false)
+          setIsPaymentButtonHandlerProvided(_ => isSDKClick)
+        }
+
         // Card-form ports are never taken from the host page: script there could read
         // every keystroke through them. See CardFormPortHandshake.
         if dict->getDictIsSome("paymentElementCreate") {
@@ -385,15 +394,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 logger.setMetadata(metadata)
               }
 
-              if dict->getDictIsSome("isPaymentCompleteHandlerProvided") {
-                let isCallbackUsedVal =
-                  dict->Utils.getBool("isPaymentCompleteHandlerProvided", false)
-                setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
-              }
-              if dict->getDictIsSome("isPaymentButtonHandlerProvided") {
-                let isSDKClick = dict->Utils.getBool("isPaymentButtonHandlerProvided", false)
-                setIsPaymentButtonHandlerProvided(_ => isSDKClick)
-              }
               if dict->getDictIsSome("paymentOptions") {
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
                 setPaymentOptionsJson(_ => paymentOptions->JSON.Encode.object)

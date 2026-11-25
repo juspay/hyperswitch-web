@@ -58,7 +58,8 @@ let make = (
       ->Option.flatMap(JSON.Decode.string)
       ->Option.getOr("")
 
-    let localSelectorString = "hyper-preMountLoader-iframe"
+    let ownerId = generateRandomString(16)
+    let localSelectorString = `hyper-management-preMountLoader-${ownerId}`
     let mountPreMountLoaderIframe = () => {
       if (
         Window.querySelector(
@@ -103,8 +104,10 @@ let make = (
       ->Option.getOr(false)
 
     let unMountPreMountLoaderIframe = () => {
-      switch preMountLoaderIframeDiv->Nullable.toOption {
-      | Some(iframe) => iframe->remove
+      removeSmartEventListener("message", `onPreMountLoaderIframeCallback-${ownerId}`)
+      removeSmartEventListener("message", `onPaymentManagementList-${ownerId}`)
+      switch Window.querySelector(`#orca-element-${localSelectorString}`)->Nullable.toOption {
+      | Some(wrapper) => wrapper->remove
       | None => ()
       }
     }
@@ -128,38 +131,40 @@ let make = (
       addSmartEventListener(
         "message",
         preMountLoaderIframeCallback,
-        "onPreMountLoaderIframeCallback",
+        `onPreMountLoaderIframeCallback-${ownerId}`,
       )
     })
 
-    let fetchPaymentManagementList = (mountedIframeRef, disableSaveCards, componentType) => {
-      Promise.make((resolve, _) => {
-        if !disableSaveCards {
-          let handleSavedPaymentMethodsLoaded = (event: Types.event) => {
-            let json = event.data->Identity.anyTypeToJson
-            let dict = json->getDictFromJson
-            let isPaymentManagementData = dict->getString("data", "") === "payment_management_list"
-            if isFromPreMountLoader(event) && isPaymentManagementData {
-              resolve()
-              let json = dict->getJsonFromDict("response", JSON.Encode.null)
-              let msg = [("paymentManagementMethods", json)]->Dict.fromArray
-              mountedIframeRef->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
-            }
-          }
-          addSmartEventListener(
-            "message",
-            handleSavedPaymentMethodsLoaded,
-            `onAllPaymentMethodsLoaded-${componentType}`,
-          )
-        } else {
-          resolve()
-        }
-        let msg =
-          [
-            ("sendPaymentManagementListResponse", !disableSaveCards->JSON.Encode.bool),
-          ]->Dict.fromArray
-        preMountLoaderIframeDiv->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
-      })
+    // Cache the response for this collection, not the destination widget.
+    // Each mount forwards the shared result to its own still-connected frame.
+    let paymentManagementListPromise = ref((None: option<promise<JSON.t>>))
+    let fetchPaymentManagementList = () => {
+      switch paymentManagementListPromise.contents {
+      | Some(promise) => promise
+      | None =>
+        let promise = preMountLoaderMountedPromise->Promise.then(_ =>
+          Promise.make((resolve, _) => {
+            let listenerName = `onPaymentManagementList-${ownerId}`
+            addSmartEventListener("message", (event: Types.event) => {
+              let dict = event.data->Identity.anyTypeToJson->getDictFromJson
+              if isFromPreMountLoader(event) && dict->getString("data", "") === "payment_management_list" {
+                removeSmartEventListener("message", listenerName)
+                resolve(dict->getJsonFromDict("response", JSON.Encode.null))
+                preMountLoaderIframeDiv->Window.iframePostMessage(
+                  [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray,
+                  ~targetOrigin=sdkOrigin,
+                )
+              }
+            }, listenerName)
+            preMountLoaderIframeDiv->Window.iframePostMessage(
+              [("sendPaymentManagementListResponse", true->JSON.Encode.bool)]->Dict.fromArray,
+              ~targetOrigin=sdkOrigin,
+            )
+          })
+        )
+        paymentManagementListPromise := Some(promise)
+        promise
+      }
     }
 
     let setElementIframeRef = ref => {
@@ -167,7 +172,8 @@ let make = (
       setIframeRef(ref)
     }
     let getElement = componentName => {
-      savedPaymentElement->Dict.get(componentName)
+      WidgetRegistry.getMountedElement(iframeRef, componentName)
+      ->Option.orElse(savedPaymentElement->Dict.get(componentName))
     }
     let update = newOptions => {
       let newOptionsDict = newOptions->getDictFromJson
@@ -255,27 +261,22 @@ let make = (
             ("customBackendUrl", customBackendUrl->JSON.Encode.string),
           ]->Dict.fromArray
 
-        preMountLoaderMountedPromise
-        ->then(async _ => {
-          let disableSavedPaymentMethods =
-            newOptions
-            ->getDictFromJson
-            ->getBool("displaySavedPaymentMethods", true)
-          if (
-            disableSavedPaymentMethods &&
-            !(expressCheckoutComponents->Array.includes(componentType))
-          ) {
-            try {
-              await fetchPaymentManagementList(mountedIframeRef, false, componentType)
-              let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
-              preMountLoaderIframeDiv->Window.iframePostMessage(msg, ~targetOrigin=sdkOrigin)
-            } catch {
-            | _ => ()
-            }
-          }
-        })
-        ->catch(_ => resolve())
-        ->ignore
+        if newOptions->getDictFromJson->getBool("displaySavedPaymentMethods", true) {
+          fetchPaymentManagementList()
+          ->then(json => {
+            mountedIframeRef->Nullable.toOption->Option.forEach(frame => {
+              if frame->Window.Element.isConnected {
+                mountedIframeRef->Window.iframePostMessage(
+                  [("paymentManagementMethods", json)]->Dict.fromArray,
+                  ~targetOrigin=sdkOrigin,
+                )
+              }
+            })
+            resolve()
+          })
+          ->catch(_ => resolve())
+          ->ignore
+        }
         mountedIframeRef->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
       }
 
@@ -283,20 +284,19 @@ let make = (
         componentType,
         newOptions,
         setElementIframeRef,
-        iframeRef,
         mountPostMessage,
         ~appearance,
         ~isPaymentManagementElement=true,
+        ~ownerId,
         ~redirectionFlags=JotaiAtoms.defaultRedirectionFlags,
         ~logger=Some(logger),
         ~confirmPayment=_payload => Promise.resolve(Dict.make()->JSON.Encode.object),
-        ~isTrustedPaymentMessage,
         ~onFullscreenCreated,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
-    {
+    let elements = {
       getElement,
       update,
       fetchUpdates,
@@ -304,6 +304,8 @@ let make = (
       updateIntent: _ => Promise.resolve(JSON.Encode.null),
       createCardForm: () => defaultCardForm,
     }
+    WidgetRegistry.registerHandle(elements, () => iframeRef->Array.filterMap(Nullable.toOption))
+    elements
   } catch {
   | e => {
       Sentry.captureException(e)

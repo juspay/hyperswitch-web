@@ -497,7 +497,6 @@ let make = (
         "paymentMethodsSDK",
         Dict.make()->JSON.Encode.object,
         setIframeRefFn,
-        [],
         mountPostMessage,
         ~appearance=Dict.make()->JSON.Encode.object,
         ~redirectionFlags,

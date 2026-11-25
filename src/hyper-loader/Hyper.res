@@ -11,6 +11,16 @@ type fullscreenMessageSource = {
   redirectOrigin: option<string>,
 }
 
+type paymentContext = {
+  mutable identity: string,
+  clientSecret: ref<string>,
+  sdkAuthorization: ref<string>,
+  frames: ref<array<Nullable.t<Dom.element>>>,
+  sessionTokens: ref<promise<JSON.t>>,
+  sdkConfigs: ref<promise<JSON.t>>,
+  clientList: ref<promise<JSON.t>>,
+}
+
 let checkAndAppend = (selector, child) => {
   if Nullable.toOption(CommonHooks.querySelector(selector)) == None {
     CommonHooks.appendChild(child)
@@ -120,6 +130,8 @@ let handleHyperApplePayMounted = (event: Types.event) => {
     let resolvePromise = _ => postShowApplePayButton(~isApplePaySheetCancelled=false)
 
     ApplePayHelpers.startApplePaySession(
+      ~walletRoutingId,
+      ~sdkHandleIsThere=LoaderPaymentElement.hasPaymentButtonHandlerForEvent(event),
       ~paymentRequest,
       ~applePaySessionRef,
       ~applePayPresent,
@@ -368,7 +380,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         })
         ->ignore
       }
-      let submitResponseHandler = ref((_json: JSON.t) => ())
+      let submitResponseHandlers: WeakMap.t<Dom.element, JSON.t => unit> = WeakMap.make()
       let isFromPaymentIframe = (event: Types.event) =>
         iframeRef.contents->Array.some(iframeRef =>
           iframeRef
@@ -379,19 +391,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           )
           ->Option.getOr(false)
         )
-      let isReadyResolved = ref(false)
-      let isReadyPromise = Promise.make((resolve, _) => {
-        let activity = `handleOnReady-${generateRandomString(16)}`
-        let handleOnReady = (event: Types.event) => {
-          let dict = event.data->anyTypeToJson->getDictFromJson
-          if isFromPaymentIframe(event) && dict->getBool("ready", false) {
-            isReadyResolved := true
-            removeSmartEventListener("message", activity)
-            resolve(Date.now())
-          }
-        }
-        addSmartEventListener("message", handleOnReady, activity)
-      })
 
       let isTrustedPaymentMessage = (event: Types.event) =>
         isFromPaymentIframe(event) ||
@@ -404,12 +403,79 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           entry.source === event.source && entry.redirectOrigin === Some(event.origin)
         )
 
-      // Shared refs for updateIntent — created once, passed to both Elements and PaymentSession.
+      // Companion Elements and PaymentSession share state only for the same payment.
       let isUpdateIntentInProgress = ref(false)
       let emptyJsonPromise = Promise.resolve(JSON.Encode.null)
-      let sessionTokensDataPromise = ref(emptyJsonPromise)
-      let sdkConfigsDataPromise = ref(emptyJsonPromise)
-      let clientListDataPromise = ref(emptyJsonPromise)
+      let paymentContexts: array<paymentContext> = []
+      let getPaymentContextIdentity = (clientSecretId, sdkAuthorizationId) => {
+        let paymentId = Utils.getPaymentIdOrExtractFromSdkAuth(
+          ~clientSecret=clientSecretId,
+          ~sdkAuthorization=Some(sdkAuthorizationId)->getNonEmptyOption,
+        )
+        if paymentId !== "" {
+          paymentId
+        } else if sdkAuthorizationId !== "" {
+          try {
+            let data = sdkAuthorizationId->Utils.getSdkAuthorizationData
+            data.pmSessionId->Option.getOr(sdkAuthorizationId)
+          } catch { | _ => sdkAuthorizationId }
+        } else { "" }
+      }
+      let synchronizePaymentContext = context => {
+        let identity = getPaymentContextIdentity(
+          context.clientSecret.contents,
+          context.sdkAuthorization.contents,
+        )
+        // A companion may have been created for the new intent while prefetch
+        // was pending. Keep its captured refs, and reconcile them at commit.
+        let related = paymentContexts->Array.filter(candidate =>
+          candidate === context ||
+          (context.identity !== "" && candidate.identity === context.identity) ||
+          (identity !== "" && candidate.identity === identity)
+        )
+        let frames = []
+        related->Array.forEach(candidate =>
+          candidate.frames.contents
+          ->UpdateIntentHelpersNew.connectedFrames
+          ->Array.forEach(frame => {
+            if !(frames->Array.includes(frame)) {
+              frames->Array.push(frame)->ignore
+            }
+          })
+        )
+        related->Array.forEach(candidate => {
+          candidate.identity = identity
+          candidate.clientSecret := context.clientSecret.contents
+          candidate.sdkAuthorization := context.sdkAuthorization.contents
+          candidate.sessionTokens := context.sessionTokens.contents
+          candidate.sdkConfigs := context.sdkConfigs.contents
+          candidate.clientList := context.clientList.contents
+          // Share the array too, so mounts made through either collection remain visible.
+          candidate.frames := frames
+        })
+      }
+      let getPaymentContext = (clientSecretId, sdkAuthorizationId) => {
+        let identity = getPaymentContextIdentity(clientSecretId, sdkAuthorizationId)
+        switch paymentContexts->Array.find(context => identity !== "" && context.identity === identity) {
+        | Some(context) =>
+          if clientSecretId !== "" { context.clientSecret := clientSecretId }
+          if sdkAuthorizationId !== "" { context.sdkAuthorization := sdkAuthorizationId }
+          synchronizePaymentContext(context)
+          context
+        | None =>
+          let context = {
+            identity,
+            clientSecret: ref(clientSecretId),
+            sdkAuthorization: ref(sdkAuthorizationId),
+            frames: ref([]),
+            sessionTokens: ref(emptyJsonPromise),
+            sdkConfigs: ref(emptyJsonPromise),
+            clientList: ref(emptyJsonPromise),
+          }
+          paymentContexts->Array.push(context)->ignore
+          context
+        }
+      }
       // TODO(sdk-configs): profileId is available here at init time for consumers who provide
       // it at Hyper.init stage. sdk-configs could be prefetched early (before elements() is
       // called) for a latency optimisation. Currently deferred to PreMountLoader for consistency.
@@ -461,9 +527,90 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             entry.iframe->Window.Element.isConnected
           )
 
-      let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
+      let confirmPaymentWrapper = (
+        payload,
+        isOneClick,
+        result,
+        ~isSdkButton=false,
+        ~useElementTarget=true,
+      ) => {
         pruneRemovedOverlays()
         let confirmTimestamp = Date.now()
+        let payloadDict = payload->getDictFromJson
+        let requestedHandle = switch payloadDict->Dict.get("element") {
+        | Some(handle) => Some(handle)
+        | None => payloadDict->Dict.get("elements")
+        }
+        let ownedFrames =
+          iframeRef.contents
+          ->Array.filterMap(Nullable.toOption)
+          ->Array.filter(Window.Element.isConnected)
+        // Public hyper.confirmPayment historically ignored element references.
+        // Keep targeting private to widget confirmation and the scoped APIs.
+        let hasAmbiguousLegacyReference = !useElementTarget && ownedFrames->Array.length > 1 && (
+          requestedHandle->Option.isSome ||
+          payloadDict->Dict.get("elementId")->Option.isSome ||
+          payloadDict->Dict.get("paymentElementId")->Option.isSome
+        )
+        let candidates = if useElementTarget {
+          switch requestedHandle {
+          | Some(handle) =>
+            WidgetRegistry.getFrames(handle)
+            ->Option.getOr([])
+            ->Array.filter(frame => ownedFrames->Array.includes(frame))
+          | None => ownedFrames
+          }
+        } else {
+          ownedFrames
+        }
+        let paymentFrames =
+          candidates->Array.filter(frame =>
+            WidgetRegistry.frames
+            ->WeakMap.get(frame)
+            ->Option.mapOr(false, state => state.componentType === "payment")
+          )
+        let cardFrames = candidates->Array.filter(frame =>
+          WidgetRegistry.frames
+          ->WeakMap.get(frame)
+          ->Option.mapOr(false, state => Utils.isOtherElements(state.componentType))
+        )
+        // Wallet buttons initiate their own confirmation. A merchant card submit
+        // must not wait on, lock, or broadcast to a neighboring wallet surface.
+        let targets = if paymentFrames->Array.length > 0 {
+          paymentFrames
+        } else if !isOneClick && cardFrames->Array.length > 0 {
+          cardFrames
+        } else {
+          candidates
+        }
+        let hasDuplicateType = targets->Array.some(frame => {
+          let state = WidgetRegistry.frames->WeakMap.get(frame)
+          targets
+          ->Array.filter(other =>
+            WidgetRegistry.frames
+            ->WeakMap.get(other)
+            ->Option.mapOr(
+              false,
+              otherState =>
+                state->Option.mapOr(
+                  false,
+                  state => state.componentType === otherState.componentType,
+                ),
+            )
+          )
+          ->Array.length > 1
+        })
+        let states = targets->Array.filterMap(frame => WidgetRegistry.frames->WeakMap.get(frame))
+        let activeFrames = targets->Array.map(Nullable.make)
+        let activity = `onSubmit-${generateRandomString(16)}`
+        let finish = () => {
+          states->Array.forEach(state => {
+            state.confirming = false
+            state.onClose := (() => ())
+          })
+          targets->Array.forEach(frame => submitResponseHandlers->WeakMap.delete(frame)->ignore)
+          removeSmartEventListener("message", activity)
+        }
         let confirmParams =
           payload
           ->JSON.Decode.object
@@ -480,7 +627,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.getOr("")
 
         let postSubmitMessage = message => {
-          iframeRef.contents->Array.forEach(ifR => {
+          activeFrames->Array.forEach(ifR => {
             ifR->Window.iframePostMessage(message, ~targetOrigin=sdkOrigin)
           })
         }
@@ -493,101 +640,199 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         LoggerUtils.logConfirmTriggered(~logger, ~source=confirmTrigger)
 
-        if isTestMode {
+        if targets->Array.length === 0 {
+          Promise.resolve(
+            getFailedSubmitResponse(
+              ~errorType="invalid_element",
+              ~message="No mounted widget belongs to this confirmation target",
+            ),
+          )
+        } else if hasDuplicateType || hasAmbiguousLegacyReference {
+          Promise.resolve(
+            getFailedSubmitResponse(
+              ~errorType="ambiguous_element",
+              ~message=useElementTarget
+                ? "Multiple widgets are mounted. Pass the specific widget as element or call widget.confirmPayment()."
+                : "Multiple widgets are mounted. Call widget.confirmPayment() on the widget to confirm.",
+            ),
+          )
+        } else if states->Array.some(state => state.confirming) {
+          Promise.resolve(
+            getFailedSubmitResponse(
+              ~errorType="confirmation_in_progress",
+              ~message="This widget already has a confirmation in progress",
+            ),
+          )
+        } else if isTestMode {
           let errorResponse = getFailedSubmitResponse(
             ~errorType="test_mode_bypass",
             ~message="Confirm Payment called in test mode - API call bypassed",
           )
           Promise.resolve(errorResponse)
         } else {
+          states->Array.forEach(state => state.confirming = true)
           Promise.make((resolve1, _) => {
-            logger.setLogInfo(
-              ~value="isReadyPromise status: " ++ (
-                isReadyResolved.contents ? "resolved" : "pending"
-              ),
-              ~eventName=IS_READY_STATUS_CHECK,
+            let settled = ref(false)
+            let resolveOnce = response => {
+              if !settled.contents {
+                settled := true
+                finish()
+                resolve1(response)
+              }
+            }
+            let readyTimeout = setTimeout(
+              () =>
+                resolveOnce(
+                  getFailedSubmitResponse(
+                    ~errorType="element_not_ready",
+                    ~message="The selected widget did not become ready",
+                  ),
+                ),
+              30000,
             )
-            isReadyPromise
-            ->Promise.then(readyTimestamp => {
-              let handleSubmitResponse = json => {
-                let dict = json->getDictFromJson
-                switch dict->Dict.get("submitSuccessful") {
-                | Some(val) =>
-                  logApi(
-                    ~apiLogType=Method,
-                    ~optLogger=Some(logger),
-                    ~result=val,
-                    ~paymentMethod="confirmPayment",
-                    ~eventName=CONFIRM_PAYMENT,
-                  )
-                  let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
-                  let returnUrl =
-                    dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
-
-                  if isOneClick {
-                    iframeRef.contents->Array.forEach(
-                      ifR => {
-                        // to unset one click button loader
-                        ifR->Window.iframePostMessage(
-                          [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
-                          ~targetOrigin=sdkOrigin,
-                        )
-                      },
+            states->Array.forEach(state => {
+              state.onClose :=
+                (
+                  () => {
+                    clearTimeout(readyTimeout)
+                    resolveOnce(
+                      getFailedSubmitResponse(
+                        ~errorType="invalid_element",
+                        ~message="The widget was unmounted during confirmation",
+                      ),
                     )
                   }
-                  postSubmitMessage(dict)
+                )
+            })
+            // Standalone wallet surfaces do not emit the form-ready event.
+            let readyStates = states->Array.filter(state =>
+              !(state.componentType->CardThemeType.getPaymentMode->Utils.checkIsWalletElement)
+            )
+            Promise.all(readyStates->Array.map(state => state.ready))
+            ->Promise.then(timestamps => {
+              clearTimeout(readyTimeout)
+              let readyTimestamp = timestamps->Array.get(0)->Option.getOr(confirmTimestamp)
+              if settled.contents {
+                ()
+              } else if targets->Array.some(frame => !(frame->Window.Element.isConnected)) {
+                resolveOnce(
+                  getFailedSubmitResponse(
+                    ~errorType="invalid_element",
+                    ~message="The widget was unmounted before confirmation",
+                  ),
+                )
+              } else {
+                let handleSubmitResponse = json => {
+                  let dict = json->getDictFromJson
+                  switch (settled.contents, dict->Dict.get("submitSuccessful")) {
+                  | (false, Some(val)) =>
+                    logApi(
+                      ~apiLogType=Method,
+                      ~optLogger=Some(logger),
+                      ~result=val,
+                      ~paymentMethod="confirmPayment",
+                      ~eventName=CONFIRM_PAYMENT,
+                    )
+                    let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
+                    let returnUrl =
+                      dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
 
-                  let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
+                    if isOneClick {
+                      activeFrames->Array.forEach(
+                        ifR => {
+                          // to unset one click button loader
+                          ifR->Window.iframePostMessage(
+                            [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
+                            ~targetOrigin=sdkOrigin,
+                          )
+                        },
+                      )
+                    }
+                    postSubmitMessage(dict)
 
-                  if isSdkButton && submitSuccessfulValue {
-                    Utils.replaceRootHref(returnUrl, redirectionFlags)
-                  } else if submitSuccessfulValue && redirect === "always" {
-                    Utils.replaceRootHref(returnUrl, redirectionFlags)
-                  } else if !submitSuccessfulValue {
-                    resolve1(json)
-                  } else {
-                    resolve1(data)
+                    let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
+
+                    if isSdkButton && submitSuccessfulValue {
+                      Utils.replaceRootHref(returnUrl, redirectionFlags)
+                    } else if submitSuccessfulValue && redirect === "always" {
+                      Utils.replaceRootHref(returnUrl, redirectionFlags)
+                    } else if !submitSuccessfulValue {
+                      resolveOnce(json)
+                    } else {
+                      resolveOnce(data)
+                    }
+                  | _ => ()
                   }
-                | None => ()
                 }
-              }
-              submitResponseHandler := handleSubmitResponse
-              let handleMessage = (event: Types.event) => {
-                if isTrustedPaymentMessage(event) {
-                  handleSubmitResponse(event.data->anyTypeToJson)
+                targets->Array.forEach(
+                  frame => submitResponseHandlers->WeakMap.set(frame, handleSubmitResponse)->ignore,
+                )
+                let handleMessage = (event: Types.event) => {
+                  let fromTarget =
+                    targets->Array.some(
+                      frame =>
+                        frame->Window.Element.isConnected &&
+                        event.source === frame->Window.contentWindow &&
+                        event.origin === sdkOrigin,
+                    )
+                  let fromOverlay =
+                    fullscreenSources.contents->Array.some(
+                      entry =>
+                        entry.source === event.source &&
+                        event.origin === sdkOrigin &&
+                        WidgetRegistry.ownsOverlay(entry.iframe, targets),
+                    )
+                  if fromTarget || fromOverlay {
+                    handleSubmitResponse(event.data->anyTypeToJson)
+                  }
                 }
+                let message = isOneClick
+                  ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
+                  : [
+                      ("doSubmit", true->JSON.Encode.bool),
+                      (
+                        "clientSecret",
+                        states
+                        ->Array.get(0)
+                        ->Option.mapOr(clientSecret.contents, state => state.getClientSecret())
+                        ->JSON.Encode.string,
+                      ),
+                      ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
+                      ("readyTimestamp", readyTimestamp->JSON.Encode.float),
+                      (
+                        "confirmParams",
+                        [
+                          ("return_url", url->JSON.Encode.string),
+                          ("publishableKey", publishableKey->JSON.Encode.string),
+                          ("redirect", redirect->JSON.Encode.string),
+                        ]->getJsonFromArrayOfJson,
+                      ),
+                    ]->Dict.fromArray
+                addSmartEventListener("message", handleMessage, activity)
+                postSubmitMessage(message)
               }
-              let message = isOneClick
-                ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
-                : [
-                    ("doSubmit", true->JSON.Encode.bool),
-                    ("clientSecret", clientSecret.contents->JSON.Encode.string),
-                    ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
-                    ("readyTimestamp", readyTimestamp->JSON.Encode.float),
-                    (
-                      "confirmParams",
-                      [
-                        ("return_url", url->JSON.Encode.string),
-                        ("publishableKey", publishableKey->JSON.Encode.string),
-                        ("redirect", redirect->JSON.Encode.string),
-                      ]->getJsonFromArrayOfJson,
-                    ),
-                  ]->Dict.fromArray
-              addSmartEventListener("message", handleMessage, "onSubmit")
-              postSubmitMessage(message)
               Promise.resolve(JSON.Encode.null)
             })
-            ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
+            ->Promise.catch(_ => {
+              clearTimeout(readyTimeout)
+              resolveOnce(
+                getFailedSubmitResponse(
+                  ~errorType="confirmation_error",
+                  ~message="Unable to confirm the selected widget",
+                ),
+              )
+              Promise.resolve(JSON.Encode.null)
+            })
             ->ignore
           })
         }
       }
 
-      let confirmPayment = payload => {
+      let confirmPayment = (payload, ~useElementTarget=true) => {
         if isUpdateIntentInProgress.contents {
           Promise.resolve(UpdateIntentHelpersNew.confirmBlockedResponse())
         } else {
-          confirmPaymentWrapper(payload, false, true)
+          confirmPaymentWrapper(payload, false, true, ~useElementTarget)
         }
       }
 
@@ -604,13 +849,24 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           let json = event.data->anyTypeToJson
           let dict = json->getDictFromJson
           switch dict->Dict.get("handleSdkConfirm") {
-          | Some(payload) => confirmPaymentViaSDKButton(payload)->ignore
+          | Some(payload) =>
+            let sender =
+              iframeRef.contents
+              ->Array.filterMap(Nullable.toOption)
+              ->Array.find(frame => event.source === frame->Window.contentWindow)
+            sender->Option.forEach(frame => {
+              let target = Dict.make()->JSON.Encode.object
+              WidgetRegistry.registerHandle(target, () => [frame])
+              let dict = payload->getDictFromJson->Dict.copy
+              dict->Dict.set("element", target)
+              confirmPaymentViaSDKButton(dict->JSON.Encode.object)->ignore
+            })
           | None => ()
           }
         }
       }
 
-      addSmartEventListener("message", handleSdkConfirm, "handleSdkConfirm")
+      addSmartEventListener("message", handleSdkConfirm, `handleSdkConfirm-${sessionID}`)
 
       if isTestMode {
         Console.warn(
@@ -638,6 +894,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         sdkAuthorization := sdkAuthorizationId
         clientSecret := clientSecretId
+        let context = getPaymentContext(clientSecretId, sdkAuthorizationId)
 
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
@@ -653,7 +910,10 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         Elements.make(
           elementsOptions,
-          setIframeRef,
+          frame => {
+            setIframeRef(frame)
+            context.frames.contents->Array.push(frame)->ignore
+          },
           ~sdkSessionId=sessionID,
           ~publishableKey,
           ~logger=Some(logger),
@@ -666,13 +926,19 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~isTestMode,
           ~preloadSDKWithParams,
           ~isUpdateIntentInProgress,
-          ~clientSecretRef=clientSecret,
-          ~sdkAuthorizationRef=sdkAuthorization,
-          ~sessionTokensDataPromise,
-          ~sdkConfigsDataPromise,
-          ~clientListDataPromise,
-          ~confirmPayment,
-          ~onSubmitResponse=json => submitResponseHandler.contents(json),
+          ~clientSecretRef=context.clientSecret,
+          ~sdkAuthorizationRef=context.sdkAuthorization,
+          ~sessionTokensDataPromise=context.sessionTokens,
+          ~sdkConfigsDataPromise=context.sdkConfigs,
+          ~clientListDataPromise=context.clientList,
+          ~paymentContextFrames=context.frames,
+          ~onPaymentContextChange=() => synchronizePaymentContext(context),
+          ~confirmPayment=payload => confirmPayment(payload),
+          ~onSubmitResponse=(frame, json) =>
+            frame
+            ->Nullable.toOption
+            ->Option.flatMap(frame => submitResponseHandlers->WeakMap.get(frame))
+            ->Option.forEach(handler => handler(json)),
           ~isTrustedPaymentMessage,
           ~isTrustedRedirectMessage,
           ~onFullscreenCreated,
@@ -773,7 +1039,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
               | None => resolve(json)
               }
             }
-            submitResponseHandler := handleSubmitResponse
+            iframe
+            ->Nullable.toOption
+            ->Option.forEach(
+              frame => submitResponseHandlers->WeakMap.set(frame, handleSubmitResponse)->ignore,
+            )
             let handleMessage = (event: Types.event) => {
               if isTrustedPaymentMessage(event) {
                 handleSubmitResponse(event.data->anyTypeToJson)
@@ -851,6 +1121,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         sdkAuthorization := paymentSessionOptionsDict->getStringFromDict("sdkAuthorization", "")
 
         clientSecret := paymentSessionOptionsDict->Utils.getStringFromDict("clientSecret", "")
+        let context = getPaymentContext(clientSecret.contents, sdkAuthorization.contents)
 
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecret.contents)
@@ -870,14 +1141,15 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~sdkSessionId=sessionID,
           ~logger=Some(logger),
           ~redirectionFlags,
-          ~iframeRef,
+          ~iframeRef=context.frames,
           ~isTestMode,
           ~isUpdateIntentInProgress,
-          ~clientSecretRef=clientSecret,
-          ~sdkAuthorizationRef=sdkAuthorization,
-          ~sessionTokensDataPromise,
-          ~sdkConfigsDataPromise,
-          ~clientListDataPromise,
+          ~clientSecretRef=context.clientSecret,
+          ~sdkAuthorizationRef=context.sdkAuthorization,
+          ~sessionTokensDataPromise=context.sessionTokens,
+          ~sdkConfigsDataPromise=context.sdkConfigs,
+          ~clientListDataPromise=context.clientList,
+          ~onPaymentContextChange=() => synchronizePaymentContext(context),
         )
       }
 
@@ -1009,7 +1281,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let returnObject: hyperInstance = {
         confirmOneClickPayment,
-        confirmPayment,
+        confirmPayment: payload => confirmPayment(payload, ~useElementTarget=false),
         elements,
         widgets: elements,
         confirmCardPayment: confirmCardPaymentFn,
@@ -1020,7 +1292,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
-        confirmTokenization: confirmPayment,
+        confirmTokenization: payload => confirmPayment(payload),
         initPaymentMethodSession,
       }
       Window.setHyper(Window.window, returnObject)

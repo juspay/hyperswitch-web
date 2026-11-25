@@ -1683,7 +1683,12 @@ let loadTheme = (dict, onLoad: ThemeImporter.themeDataModule => promise<unit>) =
 
 let oneClickRequestCounter = ref(0)
 
-let makeOneClickHandlerPromise = (sdkHandleIsThere, ~parentOrigin, ~parentWindow=iframeParent) => {
+let makeOneClickHandlerPromise = (
+  sdkHandleIsThere,
+  ~parentOrigin,
+  ~parentWindow=iframeParent,
+  ~walletRoutingId="",
+) => {
   Promise.make((resolve, _) => {
     if !sdkHandleIsThere {
       resolve(JSON.Encode.bool(true))
@@ -1724,6 +1729,7 @@ let makeOneClickHandlerPromise = (sdkHandleIsThere, ~parentOrigin, ~parentWindow
         [
           ("oneClickConfirmTriggered", true->JSON.Encode.bool),
           ("walletClickRequestId", requestId->JSON.Encode.string),
+          ("walletRoutingId", walletRoutingId->JSON.Encode.string),
         ],
         ~targetOrigin=parentOrigin,
       )
