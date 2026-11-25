@@ -527,7 +527,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             entry.iframe->Window.Element.isConnected
           )
 
-      let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
+      let confirmPaymentWrapper = (
+        payload,
+        isOneClick,
+        result,
+        ~isSdkButton=false,
+        ~useElementTarget=true,
+      ) => {
         pruneRemovedOverlays()
         let confirmTimestamp = Date.now()
         let payloadDict = payload->getDictFromJson
@@ -539,12 +545,23 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           iframeRef.contents
           ->Array.filterMap(Nullable.toOption)
           ->Array.filter(Window.Element.isConnected)
-        let candidates = switch requestedHandle {
-        | Some(handle) =>
-          WidgetRegistry.getFrames(handle)
-          ->Option.getOr([])
-          ->Array.filter(frame => ownedFrames->Array.includes(frame))
-        | None => ownedFrames
+        // Public hyper.confirmPayment historically ignored element references.
+        // Keep targeting private to widget confirmation and the scoped APIs.
+        let hasAmbiguousLegacyReference = !useElementTarget && ownedFrames->Array.length > 1 && (
+          requestedHandle->Option.isSome ||
+          payloadDict->Dict.get("elementId")->Option.isSome ||
+          payloadDict->Dict.get("paymentElementId")->Option.isSome
+        )
+        let candidates = if useElementTarget {
+          switch requestedHandle {
+          | Some(handle) =>
+            WidgetRegistry.getFrames(handle)
+            ->Option.getOr([])
+            ->Array.filter(frame => ownedFrames->Array.includes(frame))
+          | None => ownedFrames
+          }
+        } else {
+          ownedFrames
         }
         let paymentFrames =
           candidates->Array.filter(frame =>
@@ -630,11 +647,13 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
               ~message="No mounted widget belongs to this confirmation target",
             ),
           )
-        } else if hasDuplicateType {
+        } else if hasDuplicateType || hasAmbiguousLegacyReference {
           Promise.resolve(
             getFailedSubmitResponse(
               ~errorType="ambiguous_element",
-              ~message="Multiple widgets are mounted. Pass the specific widget as element or call widget.confirmPayment().",
+              ~message=useElementTarget
+                ? "Multiple widgets are mounted. Pass the specific widget as element or call widget.confirmPayment()."
+                : "Multiple widgets are mounted. Call widget.confirmPayment() on the widget to confirm.",
             ),
           )
         } else if states->Array.some(state => state.confirming) {
@@ -809,11 +828,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         }
       }
 
-      let confirmPayment = payload => {
+      let confirmPayment = (payload, ~useElementTarget=true) => {
         if isUpdateIntentInProgress.contents {
           Promise.resolve(UpdateIntentHelpersNew.confirmBlockedResponse())
         } else {
-          confirmPaymentWrapper(payload, false, true)
+          confirmPaymentWrapper(payload, false, true, ~useElementTarget)
         }
       }
 
@@ -914,7 +933,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~clientListDataPromise=context.clientList,
           ~paymentContextFrames=context.frames,
           ~onPaymentContextChange=() => synchronizePaymentContext(context),
-          ~confirmPayment,
+          ~confirmPayment=payload => confirmPayment(payload),
           ~onSubmitResponse=(frame, json) =>
             frame
             ->Nullable.toOption
@@ -1262,7 +1281,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let returnObject: hyperInstance = {
         confirmOneClickPayment,
-        confirmPayment,
+        confirmPayment: payload => confirmPayment(payload, ~useElementTarget=false),
         elements,
         widgets: elements,
         confirmCardPayment: confirmCardPaymentFn,
@@ -1273,7 +1292,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
-        confirmTokenization: confirmPayment,
+        confirmTokenization: payload => confirmPayment(payload),
         initPaymentMethodSession,
       }
       Window.setHyper(Window.window, returnObject)

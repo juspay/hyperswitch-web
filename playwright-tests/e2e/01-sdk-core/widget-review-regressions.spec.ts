@@ -13,6 +13,7 @@ test.describe("Widget review regressions @hermetic-only", () => {
       await page.evaluate(
         ({ clientSecret, types }) => {
           const w = window as any;
+          document.querySelector(".mainContainer")?.remove();
           w.reviewElements = w.HyperMethod.elements({ clientSecret });
           w.reviewReadies = [];
           types.forEach((type, index) => {
@@ -35,7 +36,7 @@ test.describe("Widget review regressions @hermetic-only", () => {
         );
       await page.evaluate(() => {
         const w = window as any;
-        w.HyperMethod.confirmPayment({ elements: w.reviewElements }).then(
+        w.HyperMethod.confirmPayment({}).then(
           (result: unknown) => {
             w.reviewResult = result;
           },
