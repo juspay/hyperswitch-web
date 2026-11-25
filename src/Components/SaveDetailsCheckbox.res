@@ -7,7 +7,9 @@ let make = (
   ~acceptance: option<PaymentMethodsRecord.customerAcceptanceSupport>=?,
 ) => {
   let showPaymentMethodsScreen = Jotai.useAtomValue(JotaiAtoms.showPaymentMethodsScreen)
-  let {business, customMessageForCardTerms} = Jotai.useAtomValue(JotaiAtoms.optionAtom)
+  let {business, customMessageForCardTerms, saveCardCheckboxLabel} = Jotai.useAtomValue(
+    JotaiAtoms.optionAtom,
+  )
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customMessageConfig = CustomPaymentMethodsConfig.useCustomPaymentMethodConfigs(
     ~paymentMethod,
@@ -23,7 +25,11 @@ let make = (
   let cardLabel = {
     let customMessage = customMessageConfig.value->Option.getOr("")
     if showPaymentMethodsScreen {
-      localeString.saveCardDetails
+      if saveCardCheckboxLabel->String.trim->String.length > 0 {
+        saveCardCheckboxLabel
+      } else {
+        localeString.saveCardDetails
+      }
     } else if customMessage->String.length > 0 {
       customMessage
     } else if customMessageForCardTerms->String.length > 0 {
