@@ -5,6 +5,7 @@ external digitalWalletSdk: digitalWalletSdk = "DIGITAL_WALLET_SDK"
 
 @react.component
 let make = (~logger: HyperLoggerTypes.loggerMake) => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   open Promise
   open Utils
 
@@ -12,7 +13,7 @@ let make = (~logger: HyperLoggerTypes.loggerMake) => {
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let metaData = json->getDictFromJson->getDictFromDict("metadata")
-      if metaData->getString("wallet", "") === "Paze" {
+      if isTrustedParent(ev) && metaData->getString("wallet", "") === "Paze" {
         let clientId = metaData->getString("clientId", "")
         let clientName = metaData->getString("clientName", "")
         let clientProfileId = metaData->getString("clientProfileId", "")
@@ -22,6 +23,8 @@ let make = (~logger: HyperLoggerTypes.loggerMake) => {
         let transactionAmount = metaData->getString("transactionAmount", "")
         let transactionCurrencyCode = metaData->getString("transactionCurrencyCode", "")
         let componentName = metaData->getString("componentName", "")
+        logger.setMerchantId(publishableKey)
+        logger.setSdkAuthorization(metaData->getString("sdkAuthorization", ""))
 
         let mountPazeSDK = () => {
           let pazeScriptURL =

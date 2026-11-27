@@ -23,6 +23,12 @@ let make = () => {
   let fieldName = fieldNameStr == "" ? None : Some(fieldNameStr)
   let surfaceFamily = surfaceFamilyStr == "" ? None : Some(surfaceFamilyStr)
   let family = PaymentSurfaceFamily.classifyFromUrlParams(~componentName, ~surfaceFamily)
+  CardFormPortHandshake.useFieldPort(
+    ~groupId=family === PaymentSurfaceFamily.OtherFamily
+      ? ""
+      : CardUtils.getQueryParamsDictforKey(url.search, "groupId"),
+    ~fieldName=fieldNameStr,
+  )
 
   React.useEffect(() => {
     if family === PaymentSurfaceFamily.VaultFamily {

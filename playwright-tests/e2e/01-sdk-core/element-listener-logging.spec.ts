@@ -13,11 +13,10 @@ test.describe("Element listener logging @hermetic-only", () => {
         const registration = elements.create("cardCvc", {});
         let changes = 0;
         registration.on("change", () => changes++);
-        window.dispatchEvent(
-          new MessageEvent("message", {
-            data: { elementType: "cardCvc", iframeId: "first" },
-          }),
-        );
+        window.sdkTest.notifyElementMessage("first", {
+          elementType: "cardCvc",
+          iframeId: "first",
+        });
         await Promise.resolve();
         if (!handshakeFirst) window.sdkTest.notifyMounted("first");
         registration.on("focus", () => {});

@@ -265,7 +265,7 @@ let make = (
     }
   }, [formRef])
 
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let saveDetailsCheckbox = CustomPaymentMethodsConfig.useSaveDetailsCheckbox(
     ~paymentMethod,

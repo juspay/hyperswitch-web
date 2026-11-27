@@ -65,7 +65,7 @@ let make = () => {
     sdkAuthorization,
   ))
 
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   isVerifyPMAuthConnectorConfigured
     ? <AddBankDetails paymentMethodType />

@@ -2,10 +2,12 @@ open Utils
 
 @react.component
 let make = () => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => true)
 
   let threeDsAuthoriseUrl = React.useRef("")
+  let paymentMethodFlowCancelMetadata = React.useRef(Dict.make())
   let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
   let logger = HyperLogger.make(~source=Elements(Payment))
@@ -21,16 +23,31 @@ let make = () => {
     }
   }
 
+  // The close button only shows once the challenge is displayed; expiry still calls handleFrictionLess directly.
+  let handleOnClose = () => {
+    SubscriptionEventHooks.emitFullscreenPaymentMethodFlowCancel(
+      ~paymentMethodFlowCancelMetadata=paymentMethodFlowCancelMetadata.current,
+    )
+    handleFrictionLess()
+  }
+
   let eventsToSendToParent = ["confirmParams", "poll_status", "openurl_if_required"]
 
-  eventsToSendToParent->UtilityHooks.useSendEventsToParent
+  let responseOrigins = React.useRef([])
+  let isTrustedChild = (ev: Window.event) =>
+    responseOrigins.current->Array.includes(ev.origin) &&
+      Window.querySelector("#threeDsAuthFrame")
+      ->Nullable.toOption
+      ->Option.map(iframe => ev.source === iframe->Window.contentWindow)
+      ->Option.getOr(false)
+  eventsToSendToParent->UtilityHooks.useSendEventsToParent(~isTrustedChild)
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
-      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+      if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
@@ -39,6 +56,8 @@ let make = () => {
         logger.setClientSecret(paymentIntentId)
         logger.setSdkAuthorization(sdkAuthorization->Option.getOr(""))
         logger.setMerchantId(publishableKey)
+        paymentMethodFlowCancelMetadata.current =
+          metaDataDict->getDictFromDict("paymentMethodFlowCancel")
         let headersDict =
           metaDataDict
           ->getJsonObjectFromDict("headers")
@@ -65,17 +84,21 @@ let make = () => {
           let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
-            messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
             postFailedSubmitResponse(
               ~errortype=errorObj.error.type_,
               ~message=errorObj.error.message,
             )
+            closePaymentLoaderIfAny()
             JSON.Encode.null->resolve
           } else {
             let creq = dict->getString("challenge_request", "")
             let challengeRequestKey = dict->getString("challenge_request_key", "creq")
             let transStatus = dict->getString("trans_status", "Y")
             let acsUrl = dict->getString("acs_url", "")
+            responseOrigins.current =
+              [acsUrl, threeDsAuthoriseUrl.current]->Array.filterMap(
+                PaymentMessageSecurity.originOf,
+              )
 
             let ele = Window.querySelector("#threeDsAuthDiv")
 
@@ -116,6 +139,7 @@ let make = () => {
           )
           let errorObj = PaymentError.itemToObjMapper(dict)
           postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
+          closePaymentLoaderIfAny()
           JSON.Encode.null->resolve
         })
         ->ignore
@@ -139,7 +163,7 @@ let make = () => {
     )
   }, [expiryTime])
 
-  <Modal loader={loader} openModal setOpenModal closeCallback={handleFrictionLess}>
+  <Modal loader={loader} openModal setOpenModal closeCallback={handleOnClose}>
     <div className="backdrop-blur-xl">
       <div id="threeDsAuthDiv" className="hidden" />
       <iframe

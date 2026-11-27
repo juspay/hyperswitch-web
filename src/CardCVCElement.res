@@ -123,6 +123,13 @@ let make = (
       }
     } else {
       let json = ev.data->safeParse
+      let requestId =
+        json->getDictFromJson->getDictFromDict("requestCVCConfirm")->getString("requestId", "")
+      let messageParentWindow = fields =>
+        Utils.messageParentWindow(
+          fields->Array.concat([("cvcWidgetRequestId", requestId->JSON.Encode.string)]),
+          ~targetOrigin=keys.parentURL,
+        )
       try {
         let dict = json->getDictFromJson
         switch dict->Dict.get("requestCVCConfirm") {
@@ -251,10 +258,12 @@ let make = (
   useSubmitPaymentDataFromParent(submitCallback, ~parentOrigin=keys.parentURL)
 
   React.useEffect(() => {
-    SubscriptionEventHooks.emitReady(
-      ~iframeId=keys.iframeId,
-      ~elementType=CardThemeType.getPaymentModeToString(paymentType),
-    )
+    if keys.iframeId !== "" && keys.iframeId !== "no-element" {
+      SubscriptionEventHooks.emitReady(
+        ~iframeId=keys.iframeId,
+        ~elementType=CardThemeType.getPaymentModeToString(paymentType),
+      )
+    }
     None
   }, (keys.iframeId, paymentType))
 

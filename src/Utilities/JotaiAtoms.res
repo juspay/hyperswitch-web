@@ -62,9 +62,10 @@ let userPhoneNumber = Jotai.atom({
   countryCode: "",
 })
 let userCardNickName = Jotai.atom(defaultFieldValues)
-let isGooglePayReady = Jotai.atom(false)
+// None until the loader answers, so callers can wait for the decision instead of reading it as "no".
+let isGooglePayReady: Jotai.atom<option<bool>> = Jotai.atom(None)
 let trustPayScriptStatus = Jotai.atom(NotLoaded)
-let isApplePayReady = Jotai.atom(false)
+let isApplePayReady: Jotai.atom<option<bool>> = Jotai.atom(None)
 let isSamsungPayReady = Jotai.atom(false)
 // Card payments via the VGS vault need the VGS Collect.js script. Ready by
 // default; set false when the script fails to load so the card method can be
@@ -164,3 +165,5 @@ let defaultRedirectionFlags: redirectionFlags = {
 let redirectionFlagsAtom = Jotai.atom(defaultRedirectionFlags)
 let isTestMode = Jotai.atom(false)
 let isUpdateIntentLoading = Jotai.atom(false)
+// Bumped when an updateIntent's refreshed list re-arms the ready event.
+let readyRearmCount = Jotai.atom(0)

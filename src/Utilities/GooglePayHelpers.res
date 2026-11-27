@@ -83,11 +83,12 @@ let useHandleGooglePayResponse = (
   ~sdkAuthorization,
 ) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let {parentURL, publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
@@ -125,14 +126,37 @@ let useHandleGooglePayResponse = (
         )
       }
       if dict->Dict.get("gpayError")->Option.isSome {
+        // Only a shopper cancel counts; other errors (e.g. Safari failing to open the sheet) are failures.
+        // statusCode may be nested under `_1` when the loader forwards a wrapped ReScript exn.
+        let gpayErrorDict = dict->getDictFromDict("gpayError")
+        let statusCode =
+          gpayErrorDict->getString(
+            "statusCode",
+            gpayErrorDict->getDictFromDict("_1")->getString("statusCode", ""),
+          )
+        if (
+          statusCode === "CANCELED" &&
+            dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
+        ) {
+          emitter.emitPaymentMethodFlowCancel(
+            ~paymentMethod="wallet",
+            ~paymentMethodType="google_pay",
+            ~canRetryPayment=true,
+          )
+        }
         messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         if isSavedMethodsFlow || !isWallet {
           postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
         }
       }
     }
-    Window.addEventListener("message", handle)
-    Some(() => {Window.removeEventListener("message", handle)})
+    let handleTrusted = (ev: Window.event) => {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) {
+        handle(ev)
+      }
+    }
+    Window.addEventListener("message", handleTrusted)
+    Some(() => {Window.removeEventListener("message", handleTrusted)})
   }, (
     requiredFields,
     isManualRetryEnabled,
@@ -140,6 +164,7 @@ let useHandleGooglePayResponse = (
     isWallet,
     isSavedMethodsFlow,
     sdkAuthorization,
+    parentURL,
   ))
 }
 

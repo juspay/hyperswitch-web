@@ -125,7 +125,7 @@ let make = (~fieldType="") => {
     }
   }, [pixCNPJ.value, pixKey.value, pixCPF.value])
 
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   <PaymentField
     fieldName

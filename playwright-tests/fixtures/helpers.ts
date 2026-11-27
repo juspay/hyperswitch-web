@@ -125,6 +125,9 @@ export async function submitAndCaptureConfirm(
   };
   if (!hermetic.enabled) await context.route(isConfirmUrl, passThrough);
 
+  // Hermetic: a test may already have confirmed once (e.g. a cancelled wallet attempt), so
+  // read the confirm this submit makes, not the first one in the call log.
+  const confirmsBefore = hermetic.calls("confirm").length;
   try {
     const responsePromise = page.waitForResponse(isConfirmResponse, {
       timeout,
@@ -134,8 +137,10 @@ export async function submitAndCaptureConfirm(
     const request = response.request().postDataJSON();
     let body = liveBody;
     if (hermetic.enabled) {
-      const call = await hermetic.waitForCall("confirm");
-      body = call?.responseBody;
+      await expect
+        .poll(() => hermetic.calls("confirm").length)
+        .toBeGreaterThan(confirmsBefore);
+      body = hermetic.calls("confirm")[confirmsBefore].responseBody;
     }
     return { request, status: response.status(), body };
   } finally {

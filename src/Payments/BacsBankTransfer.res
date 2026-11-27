@@ -51,7 +51,7 @@ let default = () => {
       }
     }
   }, (isManualRetryEnabled, email, fullName, sdkAuthorization, requiredFieldsBody))
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <RenderIf condition={layoutClass.\"type" === Accordion}>

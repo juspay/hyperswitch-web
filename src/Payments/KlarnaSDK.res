@@ -15,7 +15,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let setIsShowOrPayUsing = Jotai.useSetAtom(isShowOrPayUsing)
   let sdkHandleIsThere = Jotai.useAtomValue(isPaymentButtonHandlerProvidedAtom)
   let updateSession = Jotai.useAtomValue(updateSession)
-  let {publishableKey, iframeId, sdkAuthorization} = Jotai.useAtomValue(keys)
+  let {publishableKey, iframeId, sdkAuthorization, parentURL} = Jotai.useAtomValue(keys)
   let options = Jotai.useAtomValue(optionAtom)
   let isManualRetryEnabled = Jotai.useAtomValue(isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(~isOneClickWallet=true, Some(loggerState), Other)
@@ -26,6 +26,12 @@ let make = (~sessionObj: SessionsType.token) => {
   let isTestMode = Jotai.useAtomValue(JotaiAtoms.isTestMode)
 
   let setAreOneClickWalletsRendered = Jotai.useSetAtom(areOneClickWalletsRendered)
+
+  let (isButtonSettled, setIsButtonSettled) = React.useState(_ => false)
+  ReadyHooks.usePendingWhile(
+    ~timeoutMs=ReadyHooks.walletDecisionTimeoutMs,
+    !isButtonSettled && status !== "error",
+  )
 
   let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
@@ -76,6 +82,11 @@ let make = (~sessionObj: SessionsType.token) => {
           theme: options.wallets.style.theme == Dark ? "default" : "outlined",
           shape: "default",
           on_click: authorize => {
+            LoggerUtils.logConfirmTriggered(
+              ~logger=loggerState,
+              ~source=Wallet,
+              ~paymentMethodType,
+            )
             if isTestMode {
               Console.warn("Klarna SDK button clicked in test mode - interaction disabled")
               loggerState.setLogInfo(
@@ -104,7 +115,7 @@ let make = (~sessionObj: SessionsType.token) => {
                 ~isOneClickWallet=true,
               )
               emitter.emitBillingAddress(~country, ~state, ~postalCode=pinCode)
-              makeOneClickHandlerPromise(sdkHandleIsThere)->then(
+              makeOneClickHandlerPromise(sdkHandleIsThere, ~parentOrigin=parentURL)->then(
                 result => {
                   let result = result->JSON.Decode.bool->Option.getOr(false)
                   if result {
@@ -164,6 +175,7 @@ let make = (~sessionObj: SessionsType.token) => {
           },
         },
         _ => {
+          setIsButtonSettled(_ => true)
           setAreOneClickWalletsRendered(
             prev => {
               ...prev,

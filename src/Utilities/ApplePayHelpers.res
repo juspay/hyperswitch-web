@@ -219,9 +219,11 @@ let startApplePaySession = (
   ~publishableKey,
   ~isTaxCalculationEnabled=false,
   ~sdkAuthorization=None,
+  ~onCancel=?,
+  ~sdkHandleIsThere=false,
+  ~walletRoutingId="",
 ) => {
   open Promise
-  let sdkHandleIsThere = LoaderPaymentElement.isPaymentButtonHandlerProvided.contents
   let ssn = applePaySession(3, paymentRequest)
   switch applePaySessionRef.contents->Nullable.toOption {
   | Some(session) =>
@@ -236,7 +238,12 @@ let startApplePaySession = (
   applePaySessionRef := ssn->Js.Nullable.return
 
   ssn.onvalidatemerchant = _event => {
-    makeOneClickHandlerPromise(sdkHandleIsThere)
+    makeOneClickHandlerPromise(
+      sdkHandleIsThere,
+      ~parentOrigin=Window.Location.origin,
+      ~parentWindow=window,
+      ~walletRoutingId,
+    )
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
@@ -365,10 +372,14 @@ let startApplePaySession = (
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
     )
-    handleFailureResponse(
-      ~message="ApplePay Session Cancelled",
-      ~errorType="apple_pay",
-    )->resolvePromise
+    switch onCancel {
+    | Some(onCancel) => onCancel()
+    | None =>
+      handleFailureResponse(
+        ~message="ApplePay Session Cancelled",
+        ~errorType="apple_pay",
+      )->resolvePromise
+    }
   }
 
   ssn.begin()
@@ -388,9 +399,10 @@ let useHandleApplePayResponse = (
   ~sdkAuthorization,
 ) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let {publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let {parentURL, publishableKey} = Jotai.useAtomValue(JotaiAtoms.keys)
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
   let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
+  let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
@@ -437,6 +449,16 @@ let useHandleApplePayResponse = (
             ~isManualRetryEnabled,
           )
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
+          if (
+            dict->Utils.getBool("isApplePaySheetCancelled", false) &&
+              dict->Utils.getBool("isSavedMethodsFlow", false) === isSavedMethodsFlow
+          ) {
+            emitter.emitPaymentMethodFlowCancel(
+              ~paymentMethod="wallet",
+              ~paymentMethodType="apple_pay",
+              ~canRetryPayment=true,
+            )
+          }
           setApplePayClicked(_ => false)
           setShowApplePayLoader(_ => false)
           if isSavedMethodsFlow || !isWallet {
@@ -490,11 +512,16 @@ let useHandleApplePayResponse = (
         )
       }
     }
-    Window.addEventListener("message", handleApplePayMessages)
+    let handleTrusted = (ev: Window.event) => {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) {
+        handleApplePayMessages(ev)
+      }
+    }
+    Window.addEventListener("message", handleTrusted)
     Some(
       () => {
         messageParentWindow([("applePaySessionAbort", true->JSON.Encode.bool)])
-        Window.removeEventListener("message", handleApplePayMessages)
+        Window.removeEventListener("message", handleTrusted)
       },
     )
   }, (
@@ -506,6 +533,7 @@ let useHandleApplePayResponse = (
     requiredFields,
     isSavedMethodsFlow,
     sdkAuthorization,
+    parentURL,
   ))
 }
 
@@ -679,11 +707,11 @@ let handleApplePayBraintreeClick = (
         ~eventName=APPLE_PAY_FLOW,
         ~paymentMethod="APPLE_PAY",
       )
-      event.source->Window.sendPostMessage(
-        [
-          ("applePayBraintreeSuccess", true->JSON.Encode.bool),
-          ("token", token->JSON.Encode.string),
-        ]->Dict.fromArray,
+      event.source->Window.postMessage(
+        [("applePayBraintreeSuccess", true->JSON.Encode.bool), ("token", token->JSON.Encode.string)]
+        ->getJsonFromArrayOfJson
+        ->JSON.stringify,
+        event.origin,
       )
     }
   }
@@ -699,8 +727,9 @@ let handleApplePayBraintreeClick = (
       ("param", "paymentloader"->JSON.Encode.string),
       ("iframeId", selectorString->JSON.Encode.string),
     ])
-    event.source->Window.sendPostMessage(
-      [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray,
+    event.source->Window.postMessage(
+      [("showApplePayButton", true->JSON.Encode.bool)]->getJsonFromArrayOfJson->JSON.stringify,
+      event.origin,
     )
   }
   try {

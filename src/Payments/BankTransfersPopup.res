@@ -9,6 +9,7 @@ let getKeyValue = (json, str) => {
 
 @react.component
 let make = (~transferType) => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (keys, setKeys) = React.useState(_ => [])
   let (json, setJson) = React.useState(_ => Dict.make())
   let (postData, setPostData) = React.useState(_ => Dict.make()->JSON.Encode.object)
@@ -55,7 +56,7 @@ let make = (~transferType) => {
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson
-      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+      if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let dictMetadata =
           dict

@@ -180,8 +180,9 @@ Two workflows, one job each; parallelism comes from Playwright workers inside th
 | `playwright-pr-checks.yml` | pull requests, merge queue, pushes to `main`                                               | `hermetic`: `npx playwright test --project=hermetic --retries=0`. No secrets, no environment; superseded PR runs are cancelled                                                                                                                                                                                          | `playwright-report-hermetic` (14 days), `traces-hermetic` on failure |
 | `playwright-live-e2e.yml`  | pull requests, merge queue, pushes to `main`; nightly 21:30 UTC; manual (`include_webkit`) | `live` (environment `Testing`, sandbox): decrypts `creds.json` from S3 into the runner's temp dir, then runs `--project=live` (plus `--project=live-webkit` nightly or on request). `live-setup` creates a fresh merchant in-process; its credentials file is written outside the workspace, so keys are never uploaded | `playwright-report-live`, `traces-live` on failure (7 days)          |
 
-Both use Node 20, install root dependencies with `--ignore-scripts` (so the postinstall can't move
-the pinned `shared-code` submodule), cache browsers keyed on the locked Playwright version (saved
+Both use the Node.js version pinned in [`.nvmrc`](../.nvmrc). For local runs, use `nvm install` and
+`nvm use` from the repository root to match CI. Both install root dependencies with `--ignore-scripts`
+(so the postinstall can't move the pinned `shared-code` submodule), cache browsers keyed on the locked Playwright version (saved
 even when tests fail), and compile ReScript in its own step. Every non-PR hermetic run has its own
 concurrency group, and the live workflow has no concurrency limit, so no `main` or merge-queue run is
 ever cancelled. PRs from forks get no secrets, so the live job fails there; the hermetic job doesn't

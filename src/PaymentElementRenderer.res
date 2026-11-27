@@ -14,6 +14,7 @@ let make = (
   let sdkConfigs = Jotai.useAtomValue(sdkConfigs)
   let paymentManagementList = Jotai.useAtomValue(JotaiAtomsV2.paymentManagementList)
   let {localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
+  let logger = Jotai.useAtomValue(loggerAtom)
   let setFullName = Jotai.useSetAtom(userFullName)
   let setNickName = Jotai.useSetAtom(userCardNickName)
   let (_, startTransition) = React.useTransition()
@@ -34,6 +35,16 @@ let make = (
   | (PaymentMethodsManagement, _, _, LoadingV2) => true
   | _ => false
   }
+
+  React.useEffect(() => {
+    if isLoading {
+      LoggerUtils.logElementLoading(
+        ~logger,
+        ~componentType=CardThemeType.getPaymentModeToString(paymentType),
+      )
+    }
+    None
+  }, (isLoading, logger))
 
   let isWalletElement = paymentType->Utils.checkIsWalletElement
 

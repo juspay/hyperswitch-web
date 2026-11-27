@@ -97,7 +97,9 @@ test.describe("Payment completion hooks @hermetic-only", () => {
         await expect
           .poll(() => runtimePage.evaluate(() => window.paymentMessages))
           .toEqual(
-            button ? [{ paymentComplete: true }] : [{ openurl: expectedUrl }],
+            button
+              ? [{ paymentComplete: true, paymentId: intent.paymentId }]
+              : [{ openurl: expectedUrl }],
           );
       });
     }
@@ -154,7 +156,7 @@ test.describe("Payment completion hooks @hermetic-only", () => {
           .poll(() => runtimePage.evaluate(() => window.paymentMessages))
           .toEqual(
             shouldComplete
-              ? [{ paymentComplete: true }]
+              ? [{ paymentComplete: true, paymentId: intent.paymentId }]
               : scenario.paymentType === "Card"
                 ? [
                     {

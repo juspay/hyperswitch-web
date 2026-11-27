@@ -149,13 +149,14 @@ let threeDsAuth = async (
   let onFailure = data => {
     let dict = data->getDictFromJson
     let errorObj = PaymentError.itemToObjMapper(dict)
-    closePaymentLoaderIfAny()
+    // Deliver the result before removing a cross-site fullscreen sender.
     postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
+    closePaymentLoaderIfAny()
     JSON.Encode.null
   }
 
   let onCatchCallback = err => {
-    closePaymentLoaderIfAny()
+    // The caller reports the error before closing its fullscreen frame.
     Js.Exn.raiseError(err->JSON.stringify)
   }
 
@@ -354,6 +355,7 @@ let rec intentCall = (
   ~sdkAuthorization=None,
   ~mode: CardThemeType.mode=NONE,
   ~isTrustpayInterceptorConfirm=false,
+  ~parentOrigin: option<string>=?,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -444,11 +446,11 @@ let rec intentCall = (
             let dict = data->getDictFromJson
             let errorObj = PaymentError.itemToObjMapper(dict)
             if !isPaymentSession {
-              closePaymentLoaderIfAny()
               postFailedSubmitResponse(
                 ~errortype=errorObj.error.type_,
                 ~message=errorObj.error.message,
               )
+              closePaymentLoaderIfAny()
             }
             if handleUserError {
               handleOpenUrl(url.href)
@@ -479,8 +481,8 @@ let rec intentCall = (
             )
             if counter >= 5 {
               if !isPaymentSession {
-                closePaymentLoaderIfAny()
                 postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+                closePaymentLoaderIfAny()
               }
               if handleUserError {
                 handleOpenUrl(url.href)
@@ -505,6 +507,7 @@ let rec intentCall = (
                 : ""
               let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
               intentCall(
+                ~parentOrigin?,
                 ~fetchApi,
                 ~uri=retrieveUri,
                 ~headers,
@@ -556,14 +559,28 @@ let rec intentCall = (
             | _ => intent.payment_method_type
             }
 
+            if isConfirm {
+              let nextActionType = intent.nextAction.type_
+              handleLogging(
+                ~optLogger,
+                ~value=[
+                  ("status", intent.status->JSON.Encode.string),
+                  ("nextActionType", nextActionType->JSON.Encode.string),
+                ]
+                ->Dict.fromArray
+                ->JSON.Encode.object
+                ->JSON.stringify,
+                ~eventName=CONFIRM_NEXT_ACTION,
+                ~paymentMethod,
+              )
+            }
+
             let url = makeUrl(confirmParam.return_url)
             if isLegacyClientSecretFlow {
               url.searchParams.set("payment_intent_client_secret", clientSecret)
             }
-            url.searchParams.set(
-              "payment_id",
-              Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization),
-            )
+            let paymentId = Utils.getPaymentIdOrExtractFromSdkAuth(~clientSecret, ~sdkAuthorization)
+            url.searchParams.set("payment_id", paymentId)
             url.searchParams.set("status", intent.status)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
@@ -574,15 +591,16 @@ let rec intentCall = (
               | (Paypal, false, _) =>
                 if !isPaymentSession {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnPaymentCompleteMessage()
-                  } else {
-                    closePaymentLoaderIfAny()
+                    handleOnPaymentCompleteMessage(~paymentId)
                   }
 
                   postSubmitResponse(~jsonData=data, ~url=url.href)
+                  if !(isCallbackUsedVal->Option.getOr(false)) {
+                    closePaymentLoaderIfAny()
+                  }
                 } else if confirmParam.redirect === Some("always") {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    handleOnPaymentCompleteMessage()
+                    handleOnPaymentCompleteMessage(~paymentId)
                   } else {
                     handleOpenUrl(url.href)
                   }
@@ -599,12 +617,24 @@ let rec intentCall = (
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
                   closePaymentLoaderIfAny()
-                  handleOnPaymentCompleteMessage()
+                  handleOnPaymentCompleteMessage(~paymentId)
                 } else {
                   handleOpenUrl(url.href)
                 }
               }
             }
+
+            // Context for the fullscreen iframe to emit paymentMethodFlowCancel with.
+            let paymentMethodFlowCancelMetadata =
+              [
+                ("elementType", componentName->JSON.Encode.string),
+                (
+                  "paymentMethod",
+                  data->getDictFromJson->getString("payment_method", "")->JSON.Encode.string,
+                ),
+                ("paymentMethodType", intent.payment_method_type->JSON.Encode.string),
+                ("canRetryPayment", intent.manualRetryAllowed->JSON.Encode.bool),
+              ]->getJsonFromArrayOfJson
 
             if intent.status == "requires_customer_action" {
               if intent.nextAction.type_ == "redirect_to_url" {
@@ -629,6 +659,9 @@ let rec intentCall = (
                 let metaData = [
                   ("popupUrl", popupUrl->JSON.Encode.string),
                   ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
+                  ("paymentMethodFlowCancel", paymentMethodFlowCancelMetadata),
+                  ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+                  ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                 ]
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
@@ -724,6 +757,7 @@ let rec intentCall = (
                     ("headers", headerObj->JSON.Encode.object),
                     ("url", url.href->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
+                    ("paymentMethodFlowCancel", paymentMethodFlowCancelMetadata),
                   ]->Dict.fromArray
 
                 handleLogging(
@@ -799,6 +833,8 @@ let rec intentCall = (
                     ("returnUrl", url.href->JSON.Encode.string),
                     ("paymentMethod", paymentMethod->JSON.Encode.string),
                     ("payment_intent_data", data),
+                    ("sdkAuthorization", sdkAuthorization->Option.getOr("")->JSON.Encode.string),
+                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                   ]->Dict.fromArray
                 handleLogging(
                   ~optLogger,
@@ -862,7 +898,9 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  messageParentWindow(message)
+                  parentOrigin
+                  ->Option.filter(PaymentMessageSecurity.isConcreteOrigin)
+                  ->Option.forEach(origin => messageParentWindow(message, ~targetOrigin=origin))
                 }
                 resolve(data)
               } else if intent.nextAction.type_ === "invoke_sdk_client" {
@@ -937,7 +975,9 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  messageParentWindow(message)
+                  parentOrigin
+                  ->Option.filter(PaymentMessageSecurity.isConcreteOrigin)
+                  ->Option.forEach(origin => messageParentWindow(message, ~targetOrigin=origin))
                 }
               } else {
                 handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
@@ -1005,8 +1045,8 @@ let rec intentCall = (
         )
         if counter >= 5 {
           if !isPaymentSession {
-            closePaymentLoaderIfAny()
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            closePaymentLoaderIfAny()
           }
           if handleUserError {
             handleOpenUrl(url.href)
@@ -1029,6 +1069,7 @@ let rec intentCall = (
           let clientSecretParam = isLegacyClientSecretFlow ? `?client_secret=${clientSecret}` : ""
           let retrieveUri = `${endpoint}/payments/${paymentIntentId}${clientSecretParam}`
           intentCall(
+            ~parentOrigin?,
             ~fetchApi,
             ~uri=retrieveUri,
             ~headers,
@@ -1110,6 +1151,7 @@ let usePaymentSync = (
 
       let paymentSync = () => {
         intentCall(
+          ~parentOrigin=keys.parentURL,
           ~fetchApi,
           ~uri,
           ~headers,
@@ -1230,6 +1272,7 @@ let useCompleteAuthorizeHandler = (~isOneClickWallet=false) => {
         ->JSON.stringify
 
       intentCall(
+        ~parentOrigin=keys.parentURL,
         ~fetchApi,
         ~uri,
         ~headers=finalHeaders,
@@ -1439,6 +1482,7 @@ let usePaymentIntent = (~isOneClickWallet=false, optLogger, paymentType) => {
             ~redirectionFlags,
             ~sdkAuthorization=keys.sdkAuthorization->Utils.getNonEmptyOption,
             ~isTrustpayInterceptorConfirm,
+            ~parentOrigin=keys.parentURL,
           )
           ->then(val => {
             intentCallback(val)
@@ -1693,7 +1737,11 @@ let fetchClientList = async (
   )
 
   let onSuccess = data => data
-  let onFailure = _ => JSON.Encode.null
+
+  let onFailure = error =>
+    error->getDictFromJson->getDictIsSome("error")
+      ? error
+      : [("error", error)]->Dict.fromArray->JSON.Encode.object
 
   await fetchApiWithLogging(
     uri,
@@ -2107,6 +2155,7 @@ let usePostSessionTokens = (
         }
 
         intentCall(
+          ~parentOrigin=keys.parentURL,
           ~fetchApi,
           ~uri,
           ~headers,
@@ -2389,7 +2438,10 @@ let fetchSdkConfigs = async (
 
   let onSuccess = data => data
 
-  let onFailure = _ => JSON.Encode.null
+  let onFailure = error =>
+    error->getDictFromJson->getDictIsSome("error")
+      ? error
+      : [("error", error)]->Dict.fromArray->JSON.Encode.object
 
   await fetchApiWithLogging(
     uri,

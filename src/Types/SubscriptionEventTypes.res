@@ -9,6 +9,7 @@ let validSubscriptionEvents = [
   "billingDetailsChange",
   "surchargeInfo",
   "appliedOffersInfo",
+  "paymentMethodFlowCancel",
 ]
 
 let modifiedEventFromString = (str, key) => {
@@ -71,16 +72,17 @@ let createCardInfoPayload = (
   ]
 }
 
-let createFormStatusPayload = (~status) => {
+let createFormStatusPayload = (~elementType="payment", ~status) => {
   let payload = PaymentEventData.formStatusEventToJson(~status)
   [
-    ("elementType", "payment"->JSON.Encode.string),
+    ("elementType", elementType->JSON.Encode.string),
     ("eventName", FormStatusChange->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
 
 let createPaymentMethodStatusPayload = (
+  ~elementType="payment",
   ~paymentMethod,
   ~paymentMethodType,
   ~isSavedPaymentMethod,
@@ -94,17 +96,17 @@ let createPaymentMethodStatusPayload = (
   )
 
   [
-    ("elementType", "payment"->JSON.Encode.string),
+    ("elementType", elementType->JSON.Encode.string),
     ("eventName", PaymentMethodChange->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
 
-let createBillingAddressPayload = (~country, ~state, ~postalCode) => {
+let createBillingAddressPayload = (~elementType="payment", ~country, ~state, ~postalCode) => {
   let payload = PaymentEventData.paymentMethodInfoAddressToJson(~country, ~state, ~postalCode)
 
   [
-    ("elementType", "payment"->JSON.Encode.string),
+    ("elementType", elementType->JSON.Encode.string),
     ("eventName", BillingDetailsChange->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
@@ -122,6 +124,7 @@ let createCvcStatusPayload = (~iframeId, ~isCvcEmpty, ~isCvcComplete) => {
 }
 
 let createSurchargePayload = (
+  ~elementType="payment",
   ~surchargeDetails: option<EligibilityHelpers.eligibilitySurchargeDetails>,
 ) => {
   let event = switch surchargeDetails {
@@ -140,13 +143,14 @@ let createSurchargePayload = (
   }
   let payload = PaymentEventData.surchargeEventToJson(event)
   [
-    ("elementType", "payment"->JSON.Encode.string),
+    ("elementType", elementType->JSON.Encode.string),
     ("eventName", SurchargeInfo->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }
 
 let createAppliedOffersPayload = (
+  ~elementType="payment",
   ~offerDetails: option<EligibilityHelpers.eligibilityOfferDetails>,
 ) => {
   let event = switch offerDetails {
@@ -176,8 +180,28 @@ let createAppliedOffersPayload = (
   let payload = PaymentEventData.offersEventToJson(event)
 
   [
-    ("elementType", "payment"->JSON.Encode.string),
+    ("elementType", elementType->JSON.Encode.string),
     ("eventName", "appliedOffersInfo"->JSON.Encode.string),
+    ("payload", payload),
+  ]
+}
+
+// elementType defaults to "payment"; flows started from another element pass its componentName
+// so the loader routes the event to that element's listeners.
+let createPaymentMethodFlowCancelPayload = (
+  ~elementType="payment",
+  ~paymentMethod,
+  ~paymentMethodType,
+  ~canRetryPayment,
+) => {
+  let payload = PaymentEventData.paymentMethodFlowCancelEventToJson(
+    ~paymentMethod,
+    ~paymentMethodType,
+    ~canRetryPayment,
+  )
+  [
+    ("elementType", elementType->JSON.Encode.string),
+    ("eventName", PaymentMethodFlowCancel->eventToString->JSON.Encode.string),
     ("payload", payload),
   ]
 }

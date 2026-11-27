@@ -72,7 +72,7 @@ let useHandleSamsungPayResponse = (
   ~isWallet=true,
 ) => {
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
-  let {publishableKey, sdkAuthorization} = Jotai.useAtomValue(JotaiAtoms.keys)
+  let {parentURL, publishableKey, sdkAuthorization} = Jotai.useAtomValue(JotaiAtoms.keys)
   let isManualRetryEnabled = Jotai.useAtomValue(JotaiAtoms.isManualRetryEnabled)
 
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
@@ -116,7 +116,12 @@ let useHandleSamsungPayResponse = (
         }
       }
     }
-    Window.addEventListener("message", handleSamsung)
-    Some(() => {Window.removeEventListener("message", handleSamsung)})
-  }, (isSavedMethodsFlow, isManualRetryEnabled, isWallet, sdkAuthorization))
+    let handleTrusted = (ev: Window.event) => {
+      if Utils.isParentMessage(~parentOrigin=parentURL, ev) {
+        handleSamsung(ev)
+      }
+    }
+    Window.addEventListener("message", handleTrusted)
+    Some(() => {Window.removeEventListener("message", handleTrusted)})
+  }, (isSavedMethodsFlow, isManualRetryEnabled, isWallet, sdkAuthorization, parentURL))
 }

@@ -268,12 +268,20 @@ type paymentMethodConfig = {
 
 type paymentMethodsConfig = array<paymentMethodConfig>
 
+type allowedPaymentMethodType = {paymentMethodType: string}
+
+type allowedPaymentMethod = {
+  paymentMethod: string,
+  paymentMethodTypes: option<array<allowedPaymentMethodType>>,
+}
+
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
   business: business,
   customerPaymentMethods: savedCardsLoadState,
   paymentMethodOrder: option<array<string>>,
+  allowedPaymentMethods: option<array<allowedPaymentMethod>>,
   subscriptionEvents: option<array<PaymentEventTypes.events>>,
   displaySavedPaymentMethodsCheckbox: bool,
   displaySavedPaymentMethods: bool,
@@ -300,6 +308,7 @@ type options = {
   alwaysSendCustomerAcceptance: bool,
   redirectionInfo: redirectionInfo,
   appearance: JSON.t,
+  enableProgressiveLoading: bool,
 }
 
 type payerDetails = {
@@ -474,6 +483,7 @@ let defaultOptions = {
   customerPaymentMethods: LoadingSavedCards,
   layout: ObjectLayout(defaultLayout),
   paymentMethodOrder: None,
+  allowedPaymentMethods: None,
   subscriptionEvents: None,
   fields: defaultFields,
   displaySavedPaymentMethodsCheckbox: true,
@@ -498,6 +508,7 @@ let defaultOptions = {
   alwaysSendCustomerAcceptance: false,
   redirectionInfo: defaultRedirectionInfo,
   appearance: Dict.make()->JSON.Encode.object,
+  enableProgressiveLoading: true,
 }
 
 let getMessageDisplayMode = (str, key) => {
@@ -599,6 +610,60 @@ let getPaymentMethodsConfig = (dict, str, logger) => {
   dict
   ->getArrayOfObjectsFromDict(str)
   ->Array.map(json => getPaymentMethodConfig(json, logger))
+}
+
+// An omitted type list allows the method group. Empty/invalid lists allow none.
+let getAllowedPaymentMethods = (dict): option<array<allowedPaymentMethod>> => {
+  switch dict->Dict.get("allowedPaymentMethods") {
+  | None => None
+  | Some(value) =>
+    if value === JSON.Encode.null {
+      None
+    } else {
+      let invalid = ref(false)
+      let decodeArray = value => switch value->JSON.Decode.array {
+      | Some(values) => values
+      | None =>
+        invalid := true
+        []
+      }
+      let decodeObject = value => switch value->JSON.Decode.object {
+      | Some(value) => value
+      | None =>
+        invalid := true
+        Dict.make()
+      }
+      let allowed = value->decodeArray->Array.filterMap(value => {
+        let method = decodeObject(value)
+        let paymentMethod = method->getString("paymentMethod", "")
+        let paymentMethodTypes = method->Dict.get("paymentMethodTypes")->Option.map(value =>
+          value->decodeArray->Array.filterMap(value => {
+            let typeConfig = decodeObject(value)
+            let paymentMethodType = typeConfig->getOptionString("paymentMethodType")->getNonEmptyOption
+            if paymentMethodType->Option.isNone ||
+              typeConfig->Dict.keysToArray->Array.some(key => key !== "paymentMethodType") {
+              invalid := true
+            }
+            paymentMethodType->Option.map(paymentMethodType => {paymentMethodType: paymentMethodType})
+          })
+        )
+        if method->Dict.keysToArray->Array.some(key => key !== "paymentMethod" && key !== "paymentMethodTypes") {
+          invalid := true
+        }
+        // A legacy flat type must not silently allow the whole family.
+        if paymentMethod !== "" && method->Dict.get("paymentMethodType")->Option.isNone {
+          Some({paymentMethod, paymentMethodTypes})
+        } else {
+          invalid := true
+          None
+        }
+      })
+      if invalid.contents {
+        Console.warn("Invalid options.allowedPaymentMethods: expected [{ paymentMethod: string, paymentMethodTypes?: [{ paymentMethodType: string }] }]. Invalid entries are ignored; invalid type lists allow no types.")
+      }
+      Some(allowed)
+    }
+  }
 }
 
 let getLayout = str => {
@@ -1667,6 +1732,7 @@ let allowedPaymentElementOptions = [
   "business",
   "layout",
   "paymentMethodOrder",
+  "allowedPaymentMethods",
   "customerPaymentMethods",
   "fields",
   "readOnly",
@@ -1691,6 +1757,7 @@ let allowedPaymentElementOptions = [
   "alwaysSendCustomerAcceptance",
   "redirectionInfo",
   "appearance",
+  "enableProgressiveLoading",
 ]
 
 let fieldsToExcludeFromMasking = ["layout", "wallets", "paymentMethodsConfig", "terms"]
@@ -1744,6 +1811,7 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     layout: getLayout(dict, "layout", logger),
     customerPaymentMethods: getCustomerMethods(dict, "customerPaymentMethods"),
     paymentMethodOrder: getOptionalStrArray(dict, "paymentMethodOrder"),
+    allowedPaymentMethods: getAllowedPaymentMethods(dict),
     subscriptionEvents: SubscriptionEventTypes.getSubscriptionEvents(dict, "subscriptionEvents"),
     fields: getFields(dict, "fields", logger),
     branding: getWarningString(dict, "branding", "auto", ~logger)->getShowType("options.branding"),
@@ -1789,6 +1857,11 @@ let itemToObjMapper = (dict, logger: HyperLoggerTypes.loggerMake) => {
     alwaysSendCustomerAcceptance: getBool(dict, "alwaysSendCustomerAcceptance", false),
     redirectionInfo: getRedirectionInfo(dict, "redirectionInfo", logger),
     appearance: getJsonObjectFromDict(dict, "appearance"),
+    enableProgressiveLoading: getBool(
+      dict,
+      "enableProgressiveLoading",
+      defaultOptions.enableProgressiveLoading,
+    ),
   }
 }
 
@@ -1869,3 +1942,19 @@ let convertClickToPayCardToCustomerMethod = (
     billing: defaultDisplayBillingDetails,
   }
 }
+
+// Compare backend method/type pairs before they become rendered identifiers.
+// None preserves the backend list; Some([]) explicitly excludes every method.
+let isPaymentMethodAllowed = (
+  allowedPaymentMethods: option<array<allowedPaymentMethod>>,
+  ~paymentMethod,
+  ~paymentMethodType,
+) =>
+  allowedPaymentMethods->Option.mapOr(true, methods =>
+    methods->Array.some(method =>
+      method.paymentMethod === paymentMethod &&
+      method.paymentMethodTypes->Option.mapOr(true, types =>
+        types->Array.some(type_ => paymentMethodType === Some(type_.paymentMethodType))
+      )
+    )
+  )

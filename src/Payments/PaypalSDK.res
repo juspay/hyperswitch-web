@@ -11,6 +11,7 @@ let make = (~sessionObj: SessionsType.token) => {
     sdkHandleOneClickConfirmPayment,
     clientSecret,
     sdkAuthorization,
+    parentURL,
   } = Jotai.useAtomValue(JotaiAtoms.keys)
   let sdkHandleIsThere = Jotai.useAtomValue(JotaiAtoms.isPaymentButtonHandlerProvidedAtom)
   let loggerState = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
@@ -49,6 +50,18 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let options = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let emitter = SubscriptionEventHooks.useSubscriptionEventEmitter()
+  let emitterRef = React.useRef(emitter)
+  emitterRef.current = emitter
+
+  // Vendor callbacks outlive renders; use the current read-only setting and logger.
+  let confirmTriggerRef = React.useRef((options.readOnly, loggerState))
+  confirmTriggerRef.current = (options.readOnly, loggerState)
+  let onConfirmTriggered = () => {
+    let (readOnly, logger) = confirmTriggerRef.current
+    if !readOnly {
+      LoggerUtils.logConfirmTriggered(~logger, ~source=Wallet, ~paymentMethodType)
+    }
+  }
 
   let buttonStyle = switch options.wallets.payPal {
   | PaypalConfigObj(cfg) =>
@@ -120,6 +133,14 @@ let make = (~sessionObj: SessionsType.token) => {
     style
   }
   let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+  let handleCancel = () => {
+    handleCloseLoader()
+    emitterRef.current.emitPaymentMethodFlowCancel(
+      ~paymentMethod,
+      ~paymentMethodType,
+      ~canRetryPayment=true,
+    )
+  }
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let (requiredFields, _, _, resolutionContext) = DynamicFieldsUtils.useSuperpositionRequiredFields(
@@ -138,6 +159,10 @@ let make = (~sessionObj: SessionsType.token) => {
     ~empty=!isCompleted,
     ~paymentType=paymentMethodType,
   )
+
+  let (isButtonSettled, setIsButtonSettled) = React.useState(_ => false)
+  let onButtonSettled = () => setIsButtonSettled(_ => true)
+  ReadyHooks.usePendingWhile(~timeoutMs=ReadyHooks.walletDecisionTimeoutMs, !isButtonSettled)
 
   let mountPaypalSDK = () => {
     let clientId = sessionObj.token
@@ -169,6 +194,7 @@ let make = (~sessionObj: SessionsType.token) => {
     let paypalScript = Window.createElement("script")
     paypalScript->Window.elementSrc(paypalScriptURL)
     paypalScript->Window.elementOnerror(exn => {
+      onButtonSettled()
       let err = exn->Identity.anyTypeToJson->JSON.stringify
       loggerState.setLogError(
         ~value=`Error During Loading PayPal SDK Script: ${err}`,
@@ -178,7 +204,10 @@ let make = (~sessionObj: SessionsType.token) => {
     paypalScript->Window.elementOnload(_ => {
       loggerState.setLogInfo(~value="PayPal SDK Script Loaded", ~eventName=PAYPAL_SDK_FLOW)
       PaypalSDKHelpers.loadPaypalSDK(
+        ~parentOrigin=parentURL,
         ~loggerState,
+        ~onButtonSettled,
+        ~onConfirmTriggered,
         ~sdkHandleOneClickConfirmPayment,
         ~buttonStyle,
         ~iframeId,
@@ -193,6 +222,7 @@ let make = (~sessionObj: SessionsType.token) => {
         ~confirm,
         ~completeAuthorize,
         ~handleCloseLoader,
+        ~handleCancel,
         ~areOneClickWalletsRendered,
         ~setIsCompleted,
         ~isCallbackUsedVal,
@@ -216,7 +246,10 @@ let make = (~sessionObj: SessionsType.token) => {
         switch (checkoutScript, clientScript) {
         | (Some(_), Some(_)) =>
           PaypalSDKHelpers.loadBraintreePaypalSdk(
+            ~parentOrigin=parentURL,
             ~loggerState,
+            ~onButtonSettled,
+            ~onConfirmTriggered,
             ~sdkHandleOneClickConfirmPayment,
             ~token,
             ~buttonStyle,
@@ -230,6 +263,7 @@ let make = (~sessionObj: SessionsType.token) => {
             ~publishableKey,
             ~requiredFields,
             ~handleCloseLoader,
+            ~handleCancel,
             ~areOneClickWalletsRendered,
             ~isManualRetryEnabled,
           )

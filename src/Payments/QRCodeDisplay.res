@@ -55,7 +55,8 @@ let getPaymentMethodConfig = method => {
 }
 
 @react.component
-let make = () => {
+let make = (~logger: HyperLoggerTypes.loggerMake) => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   let (qrCode, setQrCode) = React.useState(_ => "")
   let (rawQrData, setRawQrData) = React.useState(_ => "")
   let (isCopied, setIsCopied) = React.useState(_ => false)
@@ -66,7 +67,6 @@ let make = () => {
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (headers, setHeaders) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
-  let logger = Jotai.useAtomValue(JotaiAtoms.loggerAtom)
   let customPodUri = Jotai.useAtomValue(JotaiAtoms.customPodUri)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
     getPaymentMethodConfig(Other)
@@ -79,7 +79,7 @@ let make = () => {
       let handleAsync = async () => {
         let json = ev.data->safeParse
         let dict = json->Utils.getDictFromJson
-        if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+        if isTrustedParent(ev) && dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
           let metadata = dict->getJsonObjectFromDict("metadata")
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
 
@@ -118,6 +118,8 @@ let make = () => {
           setClientSecret(_ => paymentIntentId)
           let sdkAuthorizationVal = metaDataDict->getString("sdkAuthorization", "")
           setSdkAuthorization(_ => sdkAuthorizationVal)
+          logger.setSdkAuthorization(sdkAuthorizationVal)
+          logger.setMerchantId(publishableKey)
           let headersDict =
             metaDataDict
             ->getJsonObjectFromDict("headers")

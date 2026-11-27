@@ -82,6 +82,42 @@ const AUTH_CONNECTOR_FOR_PROFILE = {
 };
 
 // ---------------------------------------------------------------------------
+// Extra MCAs added to another connector's business profile, after every
+// connector has its own profile.
+//
+// Key   = profile key (as stored in connectorProfileIds)
+// Value = [{ connector, paymentMethods }] — `connector` is read from creds.json,
+//         `paymentMethods` replaces its CONNECTOR_PAYMENT_METHODS entry so the
+//         extra MCA only offers what the profile's tests need.
+//
+// truelayer + paypal: popups.spec.ts pays with PayPal (redirect flow), cancels
+// on PayPal's page, then pays with TrueLayer (Pay by Bank) on the same payment,
+// so both must be on one profile.
+// ---------------------------------------------------------------------------
+const EXTRA_CONNECTORS_FOR_PROFILE = {
+  truelayer: [
+    {
+      connector: "paypal",
+      paymentMethods: [
+        {
+          payment_method: "wallet",
+          payment_method_types: [
+            {
+              payment_method_type: "paypal",
+              payment_experience: "redirect_to_url",
+              minimum_amount: 1,
+              maximum_amount: 99999999,
+              recurring_enabled: false,
+              installment_payment_enabled: false,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+// ---------------------------------------------------------------------------
 // Whitelist of connectors actually used by the web SDK e2e tests.
 //
 // The shared backend creds.json may contain 60+ connectors, but the web SDK
@@ -105,6 +141,7 @@ const REQUIRED_CONNECTORS = [
   "loonio",
   "gigadat",
   "trustly",
+  "truelayer",
 ];
 
 // ---------------------------------------------------------------------------
@@ -376,6 +413,25 @@ const CONNECTOR_PAYMENT_METHODS = {
         {
           payment_method_type: "paypal",
           minimum_amount: 100,
+          maximum_amount: 99999999,
+          recurring_enabled: false,
+          installment_payment_enabled: false,
+        },
+      ],
+    },
+  ],
+
+  // ── TrueLayer ────────────────────────────────────────────────────────────
+  // Pay by Bank (open_banking / open_banking, GBP): redirects to TrueLayer's
+  // hosted payment page.
+  truelayer: [
+    {
+      payment_method: "open_banking",
+      payment_method_types: [
+        {
+          payment_method_type: "open_banking",
+          payment_experience: "redirect_to_url",
+          minimum_amount: 1,
           maximum_amount: 99999999,
           recurring_enabled: false,
           installment_payment_enabled: false,
@@ -753,6 +809,7 @@ async function patchProfileAuthConnector(
  * @param {Record<string, string>} connectorAccountDetails  From creds.json.
  * @param {Record<string, any> | undefined} metadata        From creds.json.
  * @param {string} apiBaseUrl
+ * @param {any[]} [paymentMethods]  Overrides CONNECTOR_PAYMENT_METHODS[connectorName].
  */
 async function createMerchantConnectorAccount(
   secretKey,
@@ -762,8 +819,10 @@ async function createMerchantConnectorAccount(
   connectorAccountDetails,
   metadata,
   apiBaseUrl,
+  paymentMethods = undefined,
 ) {
   const paymentMethodsEnabled =
+    paymentMethods ||
     CONNECTOR_PAYMENT_METHODS[connectorName] ||
     CONNECTOR_PAYMENT_METHODS.default;
   const connectorType =
@@ -991,6 +1050,51 @@ async function setupAllCredentials({ adminApiKey, apiBaseUrl, credsFilePath }) {
   console.log(
     `[setup] Done. ${Object.keys(connectorProfileIds).length} connector(s) configured.`,
   );
+
+  // ── Extra MCAs on another connector's profile ────────────────────────────
+  for (const [profileKey, extras] of Object.entries(
+    EXTRA_CONNECTORS_FOR_PROFILE,
+  )) {
+    const profileId = connectorProfileIds[profileKey];
+    if (!profileId) {
+      console.warn(
+        `[setup] Skipping extra connectors for "${profileKey}": profile not found.`,
+      );
+      continue;
+    }
+    for (const { connector, paymentMethods } of extras) {
+      const connectorCreds = credsJson[connector];
+      const accountDetails =
+        connectorCreds && extractConnectorAccountDetails(connectorCreds);
+      if (!accountDetails) {
+        console.warn(
+          `[setup] Skipping "${connector}" on the "${profileKey}" profile: no connector_account_details found.`,
+        );
+        continue;
+      }
+      try {
+        await createMerchantConnectorAccount(
+          secretKey,
+          merchantId,
+          profileId,
+          connector,
+          accountDetails,
+          extractMetadata(connectorCreds),
+          apiBaseUrl,
+          paymentMethods,
+        );
+        console.log(
+          `[setup] ${connector.padEnd(20)} → profile_id: ${profileId} (added to "${profileKey}")`,
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(
+          `[setup] Error adding "${connector}" to the "${profileKey}" profile:`,
+          msg,
+        );
+      }
+    }
+  }
 
   // ── Patch authentication_connector_details on profiles that need it ───────
   // Must run AFTER all MCAs are created so the auth connector MCA exists.

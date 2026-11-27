@@ -48,7 +48,11 @@ type elementRef
 @val external parent: window = "parent"
 @val @scope("document") external createElement: string => Dom.element = "createElement"
 @val @scope("document") external querySelector: string => Nullable.t<Dom.element> = "querySelector"
-@val @scope("document") external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
+@val @scope("document")
+external querySelectorAllNodes: string => Dom.nodeList = "querySelectorAll"
+@val @scope("Array") external nodeListToArray: Dom.nodeList => array<Dom.element> = "from"
+// The DOM returns a NodeList; callers using Array helpers need a real array.
+let querySelectorAll = selector => querySelectorAllNodes(selector)->nodeListToArray
 @module("/package.json") @val external packageJson: packageJson = "default"
 @val @scope("document") external body: body = "body"
 @val @scope("document") external head: Dom.element = "head"
@@ -73,6 +77,7 @@ external elementQuerySelector: (elementRef, string) => Nullable.t<element> = "qu
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
 @val @scope("window") external btoa: string => string = "btoa"
 @val @scope("window") external atob: string => string = "atob"
+@val @scope("crypto") external randomUUID: unit => string = "randomUUID"
 @new external date: date = "Date"
 @get external value: Dom.element => 'a = "value"
 
@@ -288,3 +293,8 @@ let getRootHostName = () =>
     }
   | false => Location.hostname
   }
+type mutationObserver
+type mutationObserverOptions = {childList: bool, subtree: bool}
+@new external makeMutationObserver: (unit => unit) => mutationObserver = "MutationObserver"
+@send external observeMutations: (mutationObserver, Dom.element, mutationObserverOptions) => unit = "observe"
+@send external disconnectMutations: mutationObserver => unit = "disconnect"

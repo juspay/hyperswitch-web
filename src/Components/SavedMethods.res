@@ -21,10 +21,6 @@ let make = (
   let clickToPayConfig = Jotai.useAtomValue(JotaiAtoms.clickToPayConfig)
 
   let {clickToPayProvider} = clickToPayConfig
-  let customerMethods =
-    clickToPayConfig.clickToPayCards
-    ->Option.getOr([])
-    ->Array.map(obj => obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider))
 
   let {themeObj, localeString} = Jotai.useAtomValue(JotaiAtoms.configAtom)
   let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Jotai.useAtom(
@@ -44,6 +40,7 @@ let make = (
     savedPaymentMethodsCheckboxCheckedByDefault,
     layout,
     alwaysSendCustomerAcceptance,
+    allowedPaymentMethods,
   } = Jotai.useAtomValue(JotaiAtoms.optionAtom)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ =>
     savedPaymentMethodsCheckboxCheckedByDefault
@@ -82,6 +79,10 @@ let make = (
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let savedCardlength = savedMethods->Array.length
   let paymentMethodListValue = Jotai.useAtomValue(PaymentUtils.paymentMethodListValue)
+  let canShowClickToPay = PaymentUtils.canShowClickToPay(~allowedPaymentMethods, ~paymentMethodListValue)
+  let customerMethods = canShowClickToPay
+    ? clickToPayConfig.clickToPayCards->Option.getOr([])->Array.map(obj => obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider))
+    : []
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
   let layoutClass = CardUtils.getLayoutClass(layout)
   let {
@@ -100,7 +101,7 @@ let make = (
   let (isCollapsed, setIsCollapsed) = React.useState(_ => true)
 
   let shouldShowClickToPaySection =
-    clickToPayConfig.isReady == Some(true) &&
+    canShowClickToPay && clickToPayConfig.isReady == Some(true) &&
       (!groupSavedMethodsWithPaymentMethods || selectedOption == "card")
   let (installmentsError, setInstallmentsError) = React.useState(_ => "")
 
@@ -679,7 +680,7 @@ let make = (
     paymentTokenVal,
     customerId,
   ))
-  useSubmitPaymentData(submitCallback)
+  PaymentMessageHooks.useSubmitPaymentData(submitCallback)
 
   let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
     !isGuestCustomer &&
@@ -698,8 +699,8 @@ let make = (
   let enableSavedPaymentShimmer = React.useMemo(() => {
     savedCardlength === 0 &&
     !showPaymentMethodsScreen &&
-    (loadSavedCards === PaymentType.LoadingSavedCards || clickToPayConfig.isReady->Option.isNone)
-  }, (savedCardlength, loadSavedCards, showPaymentMethodsScreen, clickToPayConfig.isReady))
+    (loadSavedCards === PaymentType.LoadingSavedCards || (canShowClickToPay && clickToPayConfig.isReady->Option.isNone))
+  }, (savedCardlength, loadSavedCards, showPaymentMethodsScreen, clickToPayConfig.isReady, canShowClickToPay))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if enableSavedPaymentShimmer {

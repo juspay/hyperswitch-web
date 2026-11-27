@@ -1,5 +1,6 @@
 @react.component
 let make = () => {
+  let isTrustedParent = PaymentMessageHooks.useFullscreenParentCheck()
   open Utils
 
   let (linkToken, setLinkToken) = React.useState(_ => "")
@@ -10,8 +11,14 @@ let make = () => {
   let (sdkAuthorization, setSdkAuthorization) = React.useState(_ => "")
   let (isForceSync, setIsForceSync) = React.useState(_ => false)
   let logger = React.useMemo(
-    () => HyperLogger.make(~source=Elements(Payment), ~clientSecret, ~merchantId=publishableKey),
-    (publishableKey, clientSecret),
+    () =>
+      HyperLogger.make(
+        ~source=Elements(Payment),
+        ~clientSecret,
+        ~merchantId=publishableKey,
+        ~sdkAuthorization,
+      ),
+    (publishableKey, clientSecret, sdkAuthorization),
   )
 
   React.useEffect(() => {
@@ -20,7 +27,7 @@ let make = () => {
       let metaData = json->getDictFromJson->getDictFromDict("metadata")
       let linkToken = metaData->getString("linkToken", "")
 
-      if linkToken->String.length > 0 {
+      if isTrustedParent(ev) && linkToken->String.length > 0 {
         setLinkToken(_ => linkToken)
         setPmAuthConnectorsArr(_ =>
           metaData->getArray("pmAuthConnectorArray")->Array.map(JSON.Decode.string)

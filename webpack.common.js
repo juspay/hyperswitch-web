@@ -106,11 +106,11 @@ const authorizedConnectSources = [
   "https://dev.hyperswitch.io",
   "https://beta.hyperswitch.io",
   "https://live.hyperswitch.io",
+  "https://api.hyperswitch.io",
   "https://integ.hyperswitch.io",
   "https://integ-api.hyperswitch.io",
   "https://app.hyperswitch.io",
   "https://sandbox.hyperswitch.io",
-  "https://api.hyperswitch.io",
   "https://www.google.com/pay",
   "https://pay.google.com",
   "https://google.com/pay",
@@ -365,9 +365,6 @@ module.exports = (publicPath = "auto") => {
         url: process.env.SENTRY_URL,
         release: {
           name: "0.3",
-          uploadLegacySourcemaps: {
-            paths: ["dist"],
-          },
         },
       })
     );
